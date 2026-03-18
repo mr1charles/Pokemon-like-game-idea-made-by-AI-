@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Abilities World</title>
+  <style>
+    :root {
+      --bg: #1b2f1b;
+      --panel: #2f4f2f;
+      --panel-dark: #203520;
+      --screen: #9bbc0f;
+      --screen-mid: #8bac0f;
+      --screen-deep: #306230;
+      --screen-dark: #0f380f;
+      --paper: #dfe8b2;
+      --danger: #6f1d1b;
+      --accent: #c7f464;
+      --border: #0f380f;
+      --text: #10240f;
+      --text-light: #d9f6c0;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: linear-gradient(180deg, #111f11, #091109);
+      color: var(--text-light);
+      font-family: "Courier New", monospace;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    button { font: inherit; }
+
+    #app {
+      width: min(1180px, 100%);
+      display: grid;
+      grid-template-columns: minmax(0, 720px) minmax(300px, 1fr);
+      gap: 16px;
+    }
+
+    .panel {
+      border: 4px solid var(--border);
+      background: linear-gradient(180deg, var(--panel), var(--panel-dark));
+      box-shadow: 0 0 0 3px #5b7f32 inset;
+      border-radius: 10px;
+    }
+
+    #main-panel {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border: 3px solid var(--border);
+      background: #5d7d2b;
+      color: var(--text);
+    }
+
+    .titlebar h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .titlebar p { margin: 4px 0 0; font-size: 0.75rem; }
+
+    .tiny-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tiny-btn, .action-btn, .control-btn, .battle-btn, .starter-btn {
+      border: 3px solid var(--border);
+      background: #c7d86a;
+      color: var(--text);
+      padding: 8px 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .tiny-btn:hover, .action-btn:hover, .control-btn:hover, .battle-btn:hover, .starter-btn:hover {
+      filter: brightness(1.06);
+    }
+
+    #game-shell {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 12px;
+      align-items: start;
+    }
+
+    #screen-frame {
+      border: 5px solid var(--border);
+      background: #7d9861;
+      padding: 12px;
+      box-shadow: 0 0 0 4px #c6d88f inset;
+    }
+
+    #screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    #game-canvas {
+      width: 100%;
+      aspect-ratio: 10 / 9;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      border: 4px solid var(--border);
+      background: var(--screen);
+    }
+
+    #under-screen {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .retro-box {
+      border: 3px solid var(--border);
+      background: var(--paper);
+      color: var(--text);
+      padding: 8px;
+      min-height: 86px;
+    }
+
+    .retro-box h3 {
+      margin: 0 0 6px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .retro-box p {
+      margin: 0;
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    #controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      border: 5px solid var(--border);
+      background: #79954f;
+      color: var(--text);
+    }
+
+    .map-legend {
+      border: 3px solid var(--border);
+      background: var(--paper);
+      padding: 8px;
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .control-btn.blank { visibility: hidden; }
+
+    #field-actions {
+      display: grid;
+      gap: 6px;
+    }
+
+    #log-box {
+      border: 4px solid var(--border);
+      background: var(--paper);
+      color: var(--text);
+      padding: 10px;
+      min-height: 108px;
+    }
+
+    #log-box h3 {
+      margin: 0 0 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    #log-text {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      min-height: 64px;
+    }
+
+    #side-panel {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .side-card {
+      border: 4px solid var(--border);
+      background: #c7d86a;
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .side-card h2 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 0.74rem;
+    }
+
+    .meter {
+      height: 12px;
+      border: 2px solid var(--border);
+      background: #d8ec86;
+      margin-top: 4px;
+    }
+
+    .meter span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--screen-deep), #5c8225);
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    .list-item {
+      border: 3px solid var(--border);
+      background: var(--paper);
+      padding: 8px;
+      font-size: 0.74rem;
+      line-height: 1.4;
+    }
+
+    .list-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    #battle-panel, #starter-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 12, 5, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 40;
+    }
+
+    #battle-panel.open, #starter-modal.open { display: flex; }
+
+    .modal-card {
+      width: min(860px, 100%);
+      border: 6px solid var(--border);
+      background: #a8c44b;
+      color: var(--text);
+      padding: 14px;
+      box-shadow: 0 0 0 4px #d8ec86 inset;
+    }
+
+    #battle-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .battle-box {
+      border: 4px solid var(--border);
+      background: var(--paper);
+      padding: 10px;
+      min-height: 170px;
+    }
+
+    .sprite-view {
+      height: 130px;
+      border: 3px solid var(--border);
+      background: var(--screen);
+      margin-top: 8px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pixel-sprite {
+      width: 96px;
+      height: 96px;
+      image-rendering: pixelated;
+    }
+
+    .capture-flash {
+      position: absolute;
+      inset: 14px;
+      background: radial-gradient(circle, rgba(255,255,255,1), rgba(255,255,255,0));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .capture-flash.active {
+      animation: burst 0.5s ease-out;
+    }
+
+    @keyframes burst {
+      0% { opacity: 0; transform: scale(0.2); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0; transform: scale(1.6); }
+    }
+
+    .battle-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .starter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .starter-btn {
+      text-align: left;
+      background: var(--paper);
+      min-height: 120px;
+    }
+
+    .small {
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 980px) {
+      #app, #game-shell, #battle-layout, #under-screen { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <section id="main-panel" class="panel">
+      <div class="titlebar">
+        <div>
+          <h1>Abilities World</h1>
+          <p>Game Boy-inspired open-world abil collector</p>
+        </div>
+        <div class="tiny-actions">
+          <button class="tiny-btn" id="save-btn">Save</button>
+          <button class="tiny-btn" id="load-btn">Load</button>
+        </div>
+      </div>
+
+      <div id="game-shell">
+        <div>
+          <div id="screen-frame">
+            <div id="screen-header">
+              <span id="area-label">Area: Eden Village</span>
+              <span id="coords-label">X: 2 Y: 2</span>
+            </div>
+            <canvas id="game-canvas" width="320" height="288" aria-label="Game screen"></canvas>
+            <div id="under-screen">
+              <div class="retro-box">
+                <h3>Quest</h3>
+                <p id="quest-text">Pick your first abil, collect papers, and find the hidden grotto.</p>
+              </div>
+              <div class="retro-box">
+                <h3>Interact</h3>
+                <p id="hint-text">Walk through grass for wild abils, step on papers for lore, and use ENTER near houses or secrets.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="log-box">
+            <h3>World Feed</h3>
+            <div id="log-text">The world of Adam, Eve, ACOTW, ROP, and the Gugles waits for your first step.</div>
+          </div>
+        </div>
+
+        <aside id="controls-panel">
+          <div class="map-legend">
+            <strong>On Screen</strong><br>
+            Houses = shelter & rumors<br>
+            Bushes = random abil encounters<br>
+            Papers = lore pickups<br>
+            Dark entrances = secret areas
+          </div>
+          <div class="dpad">
+            <button class="control-btn blank" aria-hidden="true"></button>
+            <button class="control-btn" data-move="up">▲</button>
+            <button class="control-btn blank" aria-hidden="true"></button>
+            <button class="control-btn" data-move="left">◀</button>
+            <button class="control-btn" data-move="down">▼</button>
+            <button class="control-btn" data-move="right">▶</button>
+          </div>
+          <div id="field-actions">
+            <button class="action-btn" id="interact-btn">Interact</button>
+            <button class="action-btn" id="team-btn">Cycle Lead</button>
+            <button class="action-btn" id="journal-btn">Show Journal Hint</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <aside id="side-panel" class="panel">
+      <div class="side-card">
+        <h2>Trainer</h2>
+        <div class="stat-grid">
+          <div><strong>Clan</strong><br><span id="clan-label">Unchosen</span></div>
+          <div><strong>Rank</strong><br><span id="rank-label">F+</span></div>
+          <div><strong>Papers</strong><br><span id="paper-count">0</span></div>
+          <div><strong>Shards</strong><br><span id="shard-count">3</span></div>
+        </div>
+        <div class="meter"><span id="style-meter" style="width:18%"></span></div>
+        <div class="small" id="style-text">Style: DULL</div>
+      </div>
+
+      <div class="side-card">
+        <h2>Team of Abils</h2>
+        <div id="team-list" class="list"></div>
+      </div>
+
+      <div class="side-card">
+        <h2>Lore Papers</h2>
+        <div id="paper-list" class="list"></div>
+      </div>
+
+      <div class="side-card">
+        <h2>Secrets & Rewards</h2>
+        <div id="secret-list" class="list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="battle-panel" aria-hidden="true">
+    <div class="modal-card">
+      <strong>Wild Encounter</strong>
+      <div id="battle-layout">
+        <div class="battle-box">
+          <strong id="enemy-name">Wild Abil</strong>
+          <div class="small" id="enemy-lore">Enemy lore</div>
+          <div class="meter"><span id="enemy-hp" style="width:100%"></span></div>
+          <div class="small" id="enemy-hp-text">HP 30 / 30</div>
+          <div class="sprite-view">
+            <div id="enemy-sprite" class="pixel-sprite"></div>
+            <div class="capture-flash" id="capture-flash"></div>
+          </div>
+        </div>
+        <div class="battle-box">
+          <strong id="ally-name">Lead Abil</strong>
+          <div class="small" id="ally-lore">Ally lore</div>
+          <div class="meter"><span id="ally-hp" style="width:100%"></span></div>
+          <div class="small" id="ally-hp-text">HP 30 / 30</div>
+          <div class="sprite-view">
+            <div id="ally-sprite" class="pixel-sprite"></div>
+          </div>
+        </div>
+      </div>
+      <div class="battle-controls">
+        <button class="battle-btn" data-battle="basic">Basic Ability</button>
+        <button class="battle-btn" data-battle="negative">Negative Ability</button>
+        <button class="battle-btn" data-battle="ultimate">Ultimate Move</button>
+        <button class="battle-btn" data-battle="capture">Use Frame Shard</button>
+      </div>
+      <div class="retro-box" style="margin-top:10px; min-height:70px;">
+        <h3>Battle Log</h3>
+        <p id="battle-log">A wild abil appeared.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="starter-modal" aria-hidden="true">
+    <div class="modal-card">
+      <strong>Choose Your First Abil</strong>
+      <div class="small" style="margin-top:8px;">Your team is made of abils, while each abil also carries a battle technique set of positive, negative, and ultimate abilities.</div>
+      <div id="starter-grid" class="starter-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const TILE = 16;
+    const VIEW_W = 20;
+    const VIEW_H = 18;
+    const WORLD_W = 40;
+    const WORLD_H = 32;
+
+    const TILE_COLORS = {
+      grass: '#8bac0f',
+      path: '#9bbc0f',
+      deepGrass: '#76a10f',
+      water: '#306230',
+      wall: '#0f380f',
+      floor: '#8bac0f',
+      secret: '#5c6c1c'
+    };
+
+    const AREA_NAMES = {
+      village: 'Eden Village',
+      grove: 'Elemental Grove',
+      ruins: 'ROP Ruins',
+      shrine: 'Fractured Shrine',
+      grotto: 'Secret Grotto',
+      colony: 'ACOTW Relay House'
+    };
+
+    const lorePapers = [
+      { id: 'adam', x: 6, y: 4, title: 'Paper 01: Adam & Eve', text: 'Adam carried light and Eve carried plants. All powers and abils descend from their line.' },
+      { id: 'years', x: 15, y: 6, title: 'Paper 02: Reset Years', text: 'Every 5000 years the calendar resets and gains a new letter like 1912a or 1919b.' },
+      { id: 'wally', x: 27, y: 10, title: 'Paper 03: Wally Neydis', text: 'Wally learned frame control, built the Neydis clan, and tried to create the perfect human.' },
+      { id: 'gugles', x: 31, y: 23, title: 'Paper 04: Gugles', text: 'Green slug-like Gugles invade through the ear, seize the nervous center, and spread by parasitic takeover.' },
+      { id: 'einstein', x: 10, y: 26, title: 'Paper 05: Einstein', text: 'Einstein found infinite life, hid it, and died with the final word: peace.' }
+    ];
+
+    const secrets = [
+      { id: 'grotto', x: 34, y: 26, title: 'Secret Grotto', reward: 'Found a hidden shard cache and an ancient water tablet.', found: false },
+      { id: 'shrine', x: 36, y: 6, title: 'Frame Shrine', reward: 'Unlocked a style boost and a clue about Mr. Sandman.', found: false }
+    ];
+
+    const abilDex = {
+      voltail: {
+        id: 'voltail',
+        name: 'Voltail',
+        role: 'Starter',
+        family: 'Elemental',
+        rank: 'C+',
+        maxHp: 38,
+        hp: 38,
+        passive: 'Electric Hide',
+        moves: {
+          basic: { name: 'Spark Jab', damage: 8, text: 'A fast electric tackle.' },
+          negative: { name: 'Static Drain', damage: 5, heal: 3, text: 'Drains charge from the target.' },
+          ultimate: { name: 'Storm Tail', damage: 14, text: 'Calls a compact thunderstorm on one foe.' }
+        },
+        lore: 'A lightning abil raised in the Elemental Grove.',
+        sprite: 'voltail'
+      },
+      mossprout: {
+        id: 'mossprout',
+        name: 'Mossprout',
+        role: 'Starter',
+        family: 'Eden',
+        rank: 'C',
+        maxHp: 42,
+        hp: 42,
+        passive: 'Garden Memory',
+        moves: {
+          basic: { name: 'Leaf Tap', damage: 7, text: 'Simple plant strike.' },
+          negative: { name: 'Root Bind', damage: 5, text: 'Roots slow the foe.' },
+          ultimate: { name: 'Eden Bloom', damage: 13, heal: 4, text: 'A burst of ancient life force.' }
+        },
+        lore: 'A peaceful abil inspired by Eve’s plant lineage.',
+        sprite: 'mossprout'
+      },
+      puddloom: {
+        id: 'puddloom',
+        name: 'Puddloom',
+        role: 'Starter',
+        family: 'Elemental',
+        rank: 'C+',
+        maxHp: 40,
+        hp: 40,
+        passive: 'Water Skin',
+        moves: {
+          basic: { name: 'Bubble Push', damage: 7, text: 'A clean water blast.' },
+          negative: { name: 'Steam Blur', damage: 4, text: 'Mist makes the next hit softer.' },
+          ultimate: { name: 'Tide Bell', damage: 12, heal: 5, text: 'A ringing wave floods the field.' }
+        },
+        lore: 'A water abil from the oldest clan springs.',
+        sprite: 'puddloom'
+      },
+      sandmanCub: {
+        id: 'sandmanCub',
+        name: 'Sandman Cub',
+        role: 'Wild',
+        family: 'Fractured Frame',
+        rank: 'B-',
+        maxHp: 32,
+        hp: 32,
+        passive: 'Drowsy Gaze',
+        moves: {
+          basic: { name: 'Dust Flick', damage: 7, text: 'A cursed dust strike.' },
+          negative: { name: 'Sleep Pull', damage: 6, text: 'Weakens movement and will.' },
+          ultimate: { name: 'Mini Multiplication', damage: 12, text: 'Shadow copies rush the foe.' }
+        },
+        lore: 'A lesser echo of Mr. Sandman found near the shrine.',
+        sprite: 'sandman'
+      },
+      framepup: {
+        id: 'framepup',
+        name: 'Framepup',
+        role: 'Wild',
+        family: 'Neydis',
+        rank: 'B-',
+        maxHp: 34,
+        hp: 34,
+        passive: 'Split Second',
+        moves: {
+          basic: { name: 'Frame Kick', damage: 8, text: 'Strikes between two moments.' },
+          negative: { name: 'Pause Blink', damage: 5, text: 'Freezes motion for an instant.' },
+          ultimate: { name: 'Frame Burst', damage: 13, text: 'Shatters a frozen second.' }
+        },
+        lore: 'A cloned Neydis scout abil with unstable frame powers.',
+        sprite: 'framepup'
+      },
+      sluggle: {
+        id: 'sluggle',
+        name: 'Sluggle',
+        role: 'Wild',
+        family: 'Gugle',
+        rank: 'C+',
+        maxHp: 30,
+        hp: 30,
+        passive: 'Ear Whisper',
+        moves: {
+          basic: { name: 'Mind Nip', damage: 6, text: 'Tiny psychic bite.' },
+          negative: { name: 'Host Lean', damage: 4, text: 'Leans into the foe’s nerves.' },
+          ultimate: { name: 'Signal Pulse', damage: 12, text: 'A colonization ping strikes the mind.' }
+        },
+        lore: 'A tiny Gugle parasite drifting out of old ruins.',
+        sprite: 'sluggle'
+      },
+      flintooze: {
+        id: 'flintooze',
+        name: 'Flintooze',
+        role: 'Wild',
+        family: 'Flint',
+        rank: 'C',
+        maxHp: 36,
+        hp: 36,
+        passive: 'Core Ball',
+        moves: {
+          basic: { name: 'Slime Swipe', damage: 7, text: 'Shape-shifts into a blade.' },
+          negative: { name: 'Gel Guard', damage: 4, heal: 2, text: 'Hardens then restores itself.' },
+          ultimate: { name: 'Absorb Roll', damage: 11, text: 'Tries to steal shape and memory.' }
+        },
+        lore: 'A Flint abil with a vulnerable glowing core.',
+        sprite: 'flintooze'
+      }
+    };
+
+    const encounterTables = {
+      village: ['mossprout'],
+      grove: ['voltail', 'puddloom', 'flintooze'],
+      ruins: ['sluggle', 'framepup'],
+      shrine: ['sandmanCub', 'framepup'],
+      grotto: ['puddloom', 'sandmanCub'],
+      colony: ['framepup', 'sluggle']
+    };
+
+    const state = {
+      player: { x: 3, y: 3, dir: 'down', style: 18, rank: 'F+', clan: 'Wanderer' },
+      team: [],
+      activeIndex: 0,
+      papers: [],
+      shards: 3,
+      logs: ['The world of Adam, Eve, ACOTW, ROP, and the Gugles waits for your first step.'],
+      battle: null,
+      foundSecrets: [],
+      starterChosen: false
+    };
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const ui = {
+      areaLabel: document.getElementById('area-label'),
+      coordsLabel: document.getElementById('coords-label'),
+      questText: document.getElementById('quest-text'),
+      hintText: document.getElementById('hint-text'),
+      logText: document.getElementById('log-text'),
+      clanLabel: document.getElementById('clan-label'),
+      rankLabel: document.getElementById('rank-label'),
+      paperCount: document.getElementById('paper-count'),
+      shardCount: document.getElementById('shard-count'),
+      styleMeter: document.getElementById('style-meter'),
+      styleText: document.getElementById('style-text'),
+      teamList: document.getElementById('team-list'),
+      paperList: document.getElementById('paper-list'),
+      secretList: document.getElementById('secret-list'),
+      battlePanel: document.getElementById('battle-panel'),
+      starterModal: document.getElementById('starter-modal'),
+      starterGrid: document.getElementById('starter-grid'),
+      enemyName: document.getElementById('enemy-name'),
+      enemyLore: document.getElementById('enemy-lore'),
+      enemyHp: document.getElementById('enemy-hp'),
+      enemyHpText: document.getElementById('enemy-hp-text'),
+      enemySprite: document.getElementById('enemy-sprite'),
+      allyName: document.getElementById('ally-name'),
+      allyLore: document.getElementById('ally-lore'),
+      allyHp: document.getElementById('ally-hp'),
+      allyHpText: document.getElementById('ally-hp-text'),
+      allySprite: document.getElementById('ally-sprite'),
+      battleLog: document.getElementById('battle-log'),
+      captureFlash: document.getElementById('capture-flash')
+    };
+
+    function areaFromCoords(x, y) {
+      if (x > 28 && y > 22) return 'grotto';
+      if (x > 24 && y < 12) return 'shrine';
+      if (x > 18 && y > 15) return 'ruins';
+      if (x > 10 && x < 17 && y > 20 && y < 28) return 'colony';
+      if (x < 12 && y < 10) return 'village';
+      return 'grove';
+    }
+
+    function buildWorld() {
+      const world = Array.from({ length: WORLD_H }, () => Array.from({ length: WORLD_W }, () => ({ tile: 'grass', area: 'grove' })));
+
+      for (let y = 0; y < WORLD_H; y++) {
+        for (let x = 0; x < WORLD_W; x++) {
+          if (x < 12 && y < 10) world[y][x] = { tile: 'path', area: 'village' };
+          if (x > 24 && y < 12) world[y][x] = { tile: 'path', area: 'shrine' };
+          if (x > 18 && y > 15) world[y][x] = { tile: 'path', area: 'ruins' };
+          if (x > 28 && y > 22) world[y][x] = { tile: 'floor', area: 'grotto' };
+          if (x > 10 && x < 17 && y > 20 && y < 28) world[y][x] = { tile: 'floor', area: 'colony' };
+        }
+      }
+
+      const pathPoints = [
+        [4, 7], [5, 7], [6, 7], [7, 7], [8, 7], [9, 7], [10, 7], [11, 7], [12, 7], [13, 7], [14, 7], [15, 7], [16, 7], [17, 7],
+        [17, 8], [17, 9], [17, 10], [17, 11], [17, 12], [17, 13], [17, 14], [18, 14], [19, 14], [20, 14], [21, 14], [22, 14], [23, 14],
+        [24, 14], [25, 14], [26, 14], [27, 14], [28, 14], [29, 14], [30, 14], [30, 13], [30, 12], [30, 11], [30, 10], [30, 9]
+      ];
+      pathPoints.forEach(([x, y]) => { world[y][x] = { tile: 'path', area: x < 12 ? 'village' : x < 23 ? 'grove' : 'shrine' }; });
+
+      const houses = [
+        { x: 2, y: 2, w: 3, h: 3, area: 'village' },
+        { x: 7, y: 2, w: 3, h: 3, area: 'village' },
+        { x: 12, y: 22, w: 3, h: 3, area: 'colony' }
+      ];
+      houses.forEach(house => {
+        for (let y = house.y; y < house.y + house.h; y++) {
+          for (let x = house.x; x < house.x + house.w; x++) {
+            world[y][x] = { tile: 'house', area: house.area };
+          }
+        }
+      });
+
+      const bushes = [
+        [14, 4], [15, 4], [16, 4], [15, 5], [16, 5], [20, 6], [21, 6], [20, 7], [22, 7], [25, 20], [26, 20], [27, 21], [31, 24], [32, 24]
+      ];
+      bushes.forEach(([x, y]) => { world[y][x] = { tile: 'bush', area: y < 12 ? 'grove' : y > 22 ? 'grotto' : 'ruins' }; });
+
+      const waters = [
+        [18, 4], [19, 4], [18, 5], [19, 5], [18, 6], [19, 6], [32, 26], [33, 26], [32, 27], [33, 27]
+      ];
+      waters.forEach(([x, y]) => { world[y][x] = { tile: 'water', area: y < 10 ? 'grove' : 'grotto' }; });
+
+      lorePapers.forEach(paper => { world[paper.y][paper.x] = { tile: 'paper', area: areaFromCoords(paper.x, paper.y), paperId: paper.id }; });
+      secrets.forEach(secret => { world[secret.y][secret.x] = { tile: 'secret', area: areaFromCoords(secret.x, secret.y), secretId: secret.id }; });
+
+      world[8][30] = { tile: 'shrine', area: 'shrine' };
+      world[25][34] = { tile: 'cave', area: 'grotto' };
+      world[23][13] = { tile: 'house', area: 'colony' };
+
+      return world;
+    }
+
+    const world = buildWorld();
+
+    function areaFor(x, y) {
+      return world?.[y]?.[x]?.area || areaFromCoords(x, y);
+    }
+
+    function spriteFor(id) {
+      const sprites = {
+        voltail: `<rect x="22" y="12" width="18" height="26" fill="#0f380f"/><rect x="40" y="20" width="8" height="8" fill="#0f380f"/><rect x="18" y="40" width="12" height="12" fill="#306230"/><rect x="30" y="38" width="14" height="16" fill="#306230"/><rect x="16" y="18" width="6" height="10" fill="#0f380f"/><rect x="42" y="10" width="6" height="12" fill="#0f380f"/>`,
+        mossprout: `<rect x="24" y="14" width="16" height="18" fill="#306230"/><rect x="18" y="10" width="10" height="10" fill="#0f380f"/><rect x="36" y="10" width="10" height="10" fill="#0f380f"/><rect x="22" y="34" width="20" height="16" fill="#8bac0f"/><rect x="28" y="50" width="8" height="8" fill="#306230"/>`,
+        puddloom: `<rect x="22" y="12" width="20" height="24" fill="#306230"/><rect x="18" y="20" width="8" height="10" fill="#0f380f"/><rect x="38" y="20" width="8" height="10" fill="#0f380f"/><rect x="20" y="38" width="24" height="14" fill="#8bac0f"/><rect x="26" y="52" width="12" height="6" fill="#306230"/>`,
+        sandman: `<rect x="24" y="10" width="16" height="18" fill="#0f380f"/><rect x="20" y="28" width="24" height="20" fill="#306230"/><rect x="18" y="46" width="10" height="12" fill="#0f380f"/><rect x="36" y="46" width="10" height="12" fill="#0f380f"/>`,
+        framepup: `<rect x="22" y="14" width="20" height="18" fill="#0f380f"/><rect x="18" y="16" width="4" height="18" fill="#306230"/><rect x="42" y="16" width="4" height="18" fill="#306230"/><rect x="22" y="34" width="20" height="18" fill="#8bac0f"/><rect x="26" y="52" width="12" height="6" fill="#0f380f"/>`,
+        sluggle: `<rect x="16" y="28" width="30" height="16" fill="#306230"/><rect x="30" y="22" width="10" height="10" fill="#0f380f"/><rect x="18" y="44" width="20" height="10" fill="#8bac0f"/>`,
+        flintooze: `<rect x="18" y="22" width="28" height="24" fill="#306230"/><rect x="28" y="30" width="8" height="8" fill="#8bac0f"/><rect x="20" y="46" width="10" height="10" fill="#0f380f"/><rect x="34" y="46" width="10" height="10" fill="#0f380f"/>`,
+        playerUp: `<rect x="24" y="10" width="16" height="14" fill="#0f380f"/><rect x="20" y="24" width="24" height="18" fill="#306230"/><rect x="28" y="28" width="8" height="8" fill="#8bac0f"/><rect x="22" y="42" width="8" height="14" fill="#0f380f"/><rect x="34" y="42" width="8" height="14" fill="#0f380f"/>`,
+        playerDown: `<rect x="24" y="10" width="16" height="14" fill="#0f380f"/><rect x="20" y="24" width="24" height="18" fill="#306230"/><rect x="28" y="28" width="8" height="8" fill="#8bac0f"/><rect x="18" y="26" width="4" height="12" fill="#0f380f"/><rect x="42" y="26" width="4" height="12" fill="#0f380f"/><rect x="22" y="42" width="8" height="14" fill="#0f380f"/><rect x="34" y="42" width="8" height="14" fill="#0f380f"/>`,
+        playerLeft: `<rect x="20" y="10" width="16" height="14" fill="#0f380f"/><rect x="18" y="24" width="22" height="18" fill="#306230"/><rect x="24" y="28" width="8" height="8" fill="#8bac0f"/><rect x="12" y="26" width="6" height="10" fill="#0f380f"/><rect x="22" y="42" width="8" height="14" fill="#0f380f"/><rect x="32" y="42" width="8" height="14" fill="#0f380f"/>`,
+        playerRight: `<rect x="28" y="10" width="16" height="14" fill="#0f380f"/><rect x="24" y="24" width="22" height="18" fill="#306230"/><rect x="30" y="28" width="8" height="8" fill="#8bac0f"/><rect x="46" y="26" width="6" height="10" fill="#0f380f"/><rect x="24" y="42" width="8" height="14" fill="#0f380f"/><rect x="34" y="42" width="8" height="14" fill="#0f380f"/>`
+      };
+      return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">${sprites[id]}</svg>`;
+    }
+
+    function pushLog(text) {
+      state.logs.unshift(text);
+      state.logs = state.logs.slice(0, 5);
+      ui.logText.textContent = state.logs[0];
+    }
+
+    function activeAbil() {
+      return state.team[state.activeIndex] || null;
+    }
+
+    function updateRank() {
+      const lead = activeAbil();
+      if (!lead) {
+        state.player.rank = 'F+';
+        return;
+      }
+      const value = lead.rank;
+      state.player.rank = value;
+    }
+
+    function renderLists() {
+      ui.clanLabel.textContent = state.player.clan;
+      ui.rankLabel.textContent = state.player.rank;
+      ui.paperCount.textContent = String(state.papers.length);
+      ui.shardCount.textContent = String(state.shards);
+      ui.styleMeter.style.width = `${state.player.style}%`;
+      ui.styleText.textContent = `Style: ${state.player.style >= 75 ? 'LEGEND' : state.player.style >= 45 ? 'COOL' : 'DULL'}`;
+
+      ui.teamList.innerHTML = state.team.length
+        ? state.team.map((abil, index) => `<div class="list-item"><strong>${index === state.activeIndex ? '★ ' : ''}${abil.name}</strong>${abil.family} · Rank ${abil.rank}<br>Passive: ${abil.passive}<br>Moves: ${abil.moves.basic.name}, ${abil.moves.negative.name}, ${abil.moves.ultimate.name}</div>`).join('')
+        : '<div class="list-item"><strong>No abils yet</strong>Choose a starter to begin your team.</div>';
+
+      ui.paperList.innerHTML = state.papers.length
+        ? state.papers.map(paper => `<div class="list-item"><strong>${paper.title}</strong>${paper.text}</div>`).join('')
+        : '<div class="list-item"><strong>No papers yet</strong>Walk onto page tiles to collect lore.</div>';
+
+      ui.secretList.innerHTML = secrets.map(secret => {
+        const found = state.foundSecrets.includes(secret.id);
+        return `<div class="list-item"><strong>${secret.title}</strong>${found ? secret.reward : 'Still hidden somewhere on the map.'}</div>`;
+      }).join('');
+    }
+
+    function drawTile(x, y, tileInfo) {
+      const px = x * TILE;
+      const py = y * TILE;
+      let fill = TILE_COLORS.grass;
+      if (tileInfo.tile === 'path' || tileInfo.tile === 'floor') fill = TILE_COLORS.path;
+      if (tileInfo.tile === 'bush') fill = TILE_COLORS.deepGrass;
+      if (tileInfo.tile === 'water') fill = TILE_COLORS.water;
+      if (tileInfo.tile === 'secret' || tileInfo.tile === 'cave' || tileInfo.tile === 'shrine') fill = TILE_COLORS.secret;
+      ctx.fillStyle = fill;
+      ctx.fillRect(px, py, TILE, TILE);
+
+      ctx.strokeStyle = '#0f380f';
+      ctx.strokeRect(px, py, TILE, TILE);
+
+      if (tileInfo.tile === 'house') {
+        ctx.fillStyle = '#0f380f';
+        ctx.fillRect(px + 2, py + 4, 12, 10);
+        ctx.fillStyle = '#8bac0f';
+        ctx.fillRect(px + 4, py + 8, 8, 6);
+      }
+      if (tileInfo.tile === 'bush') {
+        ctx.fillStyle = '#306230';
+        ctx.fillRect(px + 2, py + 8, 12, 6);
+        ctx.fillRect(px + 4, py + 4, 8, 6);
+      }
+      if (tileInfo.tile === 'paper') {
+        ctx.fillStyle = '#dfe8b2';
+        ctx.fillRect(px + 5, py + 3, 6, 10);
+        ctx.fillStyle = '#0f380f';
+        ctx.fillRect(px + 6, py + 5, 4, 1);
+        ctx.fillRect(px + 6, py + 8, 4, 1);
+      }
+      if (tileInfo.tile === 'secret') {
+        ctx.fillStyle = '#0f380f';
+        ctx.fillRect(px + 3, py + 3, 10, 10);
+        ctx.fillStyle = '#9bbc0f';
+        ctx.fillRect(px + 5, py + 5, 6, 6);
+      }
+      if (tileInfo.tile === 'shrine') {
+        ctx.fillStyle = '#0f380f';
+        ctx.fillRect(px + 3, py + 2, 10, 12);
+        ctx.fillStyle = '#8bac0f';
+        ctx.fillRect(px + 6, py + 5, 4, 5);
+      }
+      if (tileInfo.tile === 'cave') {
+        ctx.fillStyle = '#0f380f';
+        ctx.fillRect(px + 2, py + 2, 12, 12);
+      }
+    }
+
+    function drawPlayer(screenX, screenY) {
+      const px = screenX * TILE;
+      const py = screenY * TILE;
+      ctx.fillStyle = '#0f380f';
+      ctx.fillRect(px + 5, py + 2, 6, 4);
+      ctx.fillStyle = '#306230';
+      ctx.fillRect(px + 4, py + 6, 8, 5);
+      ctx.fillStyle = '#8bac0f';
+      ctx.fillRect(px + 6, py + 7, 4, 3);
+      ctx.fillStyle = '#0f380f';
+      if (state.player.dir === 'left') ctx.fillRect(px + 2, py + 7, 2, 3);
+      if (state.player.dir === 'right') ctx.fillRect(px + 12, py + 7, 2, 3);
+      if (state.player.dir === 'up') ctx.fillRect(px + 6, py + 1, 4, 1);
+      if (state.player.dir === 'down') {
+        ctx.fillRect(px + 3, py + 6, 1, 3);
+        ctx.fillRect(px + 12, py + 6, 1, 3);
+      }
+      ctx.fillRect(px + 5, py + 11, 2, 4);
+      ctx.fillRect(px + 9, py + 11, 2, 4);
+    }
+
+    function renderWorld() {
+      ctx.fillStyle = '#9bbc0f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, state.player.x - Math.floor(VIEW_W / 2)));
+      const camY = Math.max(0, Math.min(WORLD_H - VIEW_H, state.player.y - Math.floor(VIEW_H / 2)));
+
+      for (let y = 0; y < VIEW_H; y++) {
+        for (let x = 0; x < VIEW_W; x++) {
+          const tileInfo = world[camY + y][camX + x];
+          drawTile(x, y, tileInfo);
+        }
+      }
+
+      const screenX = state.player.x - camX;
+      const screenY = state.player.y - camY;
+      drawPlayer(screenX, screenY);
+
+      const current = currentTile();
+      ui.areaLabel.textContent = `Area: ${AREA_NAMES[current.area] || 'Unknown'}`;
+      ui.coordsLabel.textContent = `X: ${state.player.x} Y: ${state.player.y}`;
+    }
+
+    function currentTile() {
+      return world[state.player.y][state.player.x];
+    }
+
+    function walkable(tileInfo) {
+      return !['water'].includes(tileInfo.tile);
+    }
+
+    function collectPaper(tileInfo) {
+      if (tileInfo.tile !== 'paper') return;
+      const paper = lorePapers.find(item => item.id === tileInfo.paperId);
+      if (!paper || state.papers.some(item => item.id === paper.id)) return;
+      state.papers.push(paper);
+      pushLog(`Picked up ${paper.title}.`);
+      ui.questText.textContent = 'Keep collecting papers to uncover ACOTW, Neydis, and Gugle lore.';
+      world[state.player.y][state.player.x] = { tile: 'path', area: tileInfo.area };
+      render();
+    }
+
+    function revealSecret(tileInfo) {
+      if (tileInfo.tile !== 'secret') return false;
+      const secret = secrets.find(item => item.id === tileInfo.secretId);
+      if (!secret || state.foundSecrets.includes(secret.id)) return true;
+      state.foundSecrets.push(secret.id);
+      state.shards += 2;
+      state.player.style = Math.min(100, state.player.style + 12);
+      pushLog(`You found ${secret.title}. ${secret.reward}`);
+      ui.questText.textContent = 'A secret place rewarded you. Search for more hidden entrances.';
+      return true;
+    }
+
+    function maybeEncounter(tileInfo) {
+      if (state.battle || !state.starterChosen) return;
+      if (!['bush', 'grass'].includes(tileInfo.tile)) return;
+      const area = tileInfo.area;
+      const pool = encounterTables[area] || ['mossprout'];
+      if (Math.random() > 0.22) return;
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      const enemy = JSON.parse(JSON.stringify(abilDex[id]));
+      enemy.hp = enemy.maxHp;
+      state.battle = { enemy };
+      ui.battlePanel.classList.add('open');
+      ui.battlePanel.setAttribute('aria-hidden', 'false');
+      updateBattleUI(`A wild ${enemy.name} stepped out of the ${AREA_NAMES[area]}.`);
+    }
+
+    function move(dx, dy) {
+      if (state.battle || !state.starterChosen) return;
+      if (dx === 1) state.player.dir = 'right';
+      if (dx === -1) state.player.dir = 'left';
+      if (dy === 1) state.player.dir = 'down';
+      if (dy === -1) state.player.dir = 'up';
+      const nx = Math.max(0, Math.min(WORLD_W - 1, state.player.x + dx));
+      const ny = Math.max(0, Math.min(WORLD_H - 1, state.player.y + dy));
+      if (!walkable(world[ny][nx])) {
+        pushLog('Water blocks the path. Find another route.');
+        render();
+        return;
+      }
+      state.player.x = nx;
+      state.player.y = ny;
+      const tileInfo = currentTile();
+      if (tileInfo.tile === 'paper') collectPaper(tileInfo);
+      if (tileInfo.tile === 'secret') revealSecret(tileInfo);
+      maybeEncounter(tileInfo);
+      render();
+    }
+
+    function interact() {
+      const tileInfo = currentTile();
+      if (tileInfo.tile === 'paper') {
+        collectPaper(tileInfo);
+        return;
+      }
+      if (tileInfo.tile === 'secret') {
+        revealSecret(tileInfo);
+        render();
+        return;
+      }
+      if (tileInfo.tile === 'house') {
+        pushLog('A villager says: “Bushes hide wild abils, papers hold truth, and the dark shrine hides frame creatures.”');
+      } else if (tileInfo.tile === 'shrine') {
+        pushLog('The shrine vibrates with frame energy. Mr. Sandman’s echo feels near.');
+        state.player.style = Math.min(100, state.player.style + 5);
+      } else if (tileInfo.tile === 'cave') {
+        pushLog('The cave wall slides open further. Secret rewards tend to hide in silence.');
+      } else {
+        pushLog('You check the ground, but find only old footsteps and rustling grass.');
+      }
+      render();
+    }
+
+    function updateBattleUI(log) {
+      const enemy = state.battle.enemy;
+      const ally = activeAbil();
+      ui.enemyName.textContent = enemy.name;
+      ui.enemyLore.textContent = enemy.lore;
+      ui.enemyHp.style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
+      ui.enemyHpText.textContent = `HP ${enemy.hp} / ${enemy.maxHp}`;
+      ui.enemySprite.innerHTML = spriteFor(enemy.sprite).replace('<svg', '<svg class="pixel-sprite"');
+
+      ui.allyName.textContent = ally.name;
+      ui.allyLore.textContent = ally.lore;
+      ui.allyHp.style.width = `${(ally.hp / ally.maxHp) * 100}%`;
+      ui.allyHpText.textContent = `HP ${ally.hp} / ${ally.maxHp}`;
+      ui.allySprite.innerHTML = spriteFor(ally.sprite).replace('<svg', '<svg class="pixel-sprite"');
+      ui.battleLog.textContent = log;
+    }
+
+    function closeBattle() {
+      state.battle = null;
+      ui.battlePanel.classList.remove('open');
+      ui.battlePanel.setAttribute('aria-hidden', 'true');
+      render();
+    }
+
+    function battleAction(kind) {
+      if (!state.battle) return;
+      const ally = activeAbil();
+      const enemy = state.battle.enemy;
+      if (!ally) return;
+
+      if (kind === 'capture') {
+        if (state.shards <= 0) {
+          updateBattleUI('No Frame Shards left.');
+          return;
+        }
+        state.shards -= 1;
+        const chance = Math.min(0.92, 0.22 + (1 - enemy.hp / enemy.maxHp) * 0.58 + state.player.style / 200);
+        ui.captureFlash.classList.remove('active');
+        void ui.captureFlash.offsetWidth;
+        ui.captureFlash.classList.add('active');
+        if (Math.random() < chance) {
+          if (state.team.length < 6) {
+            enemy.hp = enemy.maxHp;
+            state.team.push(enemy);
+            updateRank();
+            updateBattleUI(`${enemy.name} was sealed by the Frame Shard and joined your team.`);
+            setTimeout(closeBattle, 650);
+          } else {
+            updateBattleUI(`${enemy.name} was caught, but your team is full. It was logged and released.`);
+            setTimeout(closeBattle, 650);
+          }
+        } else {
+          updateBattleUI(`${enemy.name} broke free from the Frame Shard.`);
+          enemyTurn();
+        }
+        renderLists();
+        return;
+      }
+
+      const move = ally.moves[kind];
+      enemy.hp = Math.max(0, enemy.hp - move.damage);
+      ally.hp = Math.min(ally.maxHp, ally.hp + (move.heal || 0));
+      state.player.style = Math.min(100, state.player.style + 5);
+
+      if (enemy.hp <= 0) {
+        updateBattleUI(`${ally.name} used ${move.name}. ${enemy.name} was defeated and dropped a shard.`);
+        state.shards += 1;
+        setTimeout(closeBattle, 700);
+        renderLists();
+        return;
+      }
+
+      updateBattleUI(`${ally.name} used ${move.name}. ${move.text}`);
+      enemyTurn();
+      renderLists();
+    }
+
+    function enemyTurn() {
+      if (!state.battle) return;
+      const ally = activeAbil();
+      const enemy = state.battle.enemy;
+      const moveNames = ['basic', 'negative', 'ultimate'];
+      const move = enemy.moves[moveNames[Math.floor(Math.random() * moveNames.length)]];
+      ally.hp = Math.max(1, ally.hp - move.damage);
+      updateBattleUI(`${enemy.name} used ${move.name}. ${ally.name} hangs on with ${ally.hp} HP.`);
+      renderLists();
+    }
+
+    function cycleLead() {
+      if (state.team.length <= 1) {
+        pushLog('You need more than one abil to cycle your lead.');
+        return;
+      }
+      state.activeIndex = (state.activeIndex + 1) % state.team.length;
+      updateRank();
+      pushLog(`${activeAbil().name} is now leading the team.`);
+      render();
+    }
+
+    function showJournalHint() {
+      const nextPaper = lorePapers.find(paper => !state.papers.some(found => found.id === paper.id));
+      const nextSecret = secrets.find(secret => !state.foundSecrets.includes(secret.id));
+      if (nextPaper) {
+        pushLog(`Journal hint: ${nextPaper.title} is hidden somewhere near ${AREA_NAMES[areaFor(nextPaper.x, nextPaper.y)]}.`);
+      } else if (nextSecret) {
+        pushLog(`Journal hint: ${nextSecret.title} still waits in ${AREA_NAMES[areaFor(nextSecret.x, nextSecret.y)]}.`);
+      } else {
+        pushLog('You uncovered every known paper and secret in this build.');
+      }
+      render();
+    }
+
+    function saveGame() {
+      localStorage.setItem('abilities-world-save', JSON.stringify(state));
+      pushLog('Game saved.');
+      render();
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem('abilities-world-save');
+      if (!raw) {
+        pushLog('No save data found.');
+        render();
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      Object.assign(state, parsed);
+      updateRank();
+      pushLog('Save loaded.');
+      render();
+    }
+
+    function renderStarterModal() {
+      const starters = ['voltail', 'mossprout', 'puddloom'];
+      ui.starterGrid.innerHTML = starters.map(id => {
+        const abil = abilDex[id];
+        return `<button class="starter-btn" data-starter="${id}"><strong>${abil.name}</strong><div class="small">${abil.lore}</div><div class="small">Passive: ${abil.passive}</div><div class="small">Moves: ${abil.moves.basic.name}, ${abil.moves.negative.name}, ${abil.moves.ultimate.name}</div></button>`;
+      }).join('');
+      ui.starterModal.classList.add('open');
+      ui.starterModal.setAttribute('aria-hidden', 'false');
+      document.querySelectorAll('[data-starter]').forEach(button => {
+        button.addEventListener('click', () => {
+          const abil = JSON.parse(JSON.stringify(abilDex[button.dataset.starter]));
+          state.team = [abil];
+          state.activeIndex = 0;
+          state.player.clan = abil.family;
+          state.starterChosen = true;
+          updateRank();
+          pushLog(`${abil.name} joined you as your first abil.`);
+          ui.starterModal.classList.remove('open');
+          ui.starterModal.setAttribute('aria-hidden', 'true');
+          render();
+        });
+      });
+    }
+
+    function render() {
+      renderWorld();
+      renderLists();
+      updateRank();
+      ui.rankLabel.textContent = state.player.rank;
+      ui.clanLabel.textContent = state.player.clan;
+      ui.paperCount.textContent = String(state.papers.length);
+      ui.shardCount.textContent = String(state.shards);
+      ui.styleMeter.style.width = `${state.player.style}%`;
+      ui.styleText.textContent = `Style: ${state.player.style >= 75 ? 'LEGEND' : state.player.style >= 45 ? 'COOL' : 'DULL'}`;
+    }
+
+    document.querySelectorAll('[data-move]').forEach(button => {
+      button.addEventListener('click', () => {
+        const dir = button.dataset.move;
+        if (dir === 'up') move(0, -1);
+        if (dir === 'down') move(0, 1);
+        if (dir === 'left') move(-1, 0);
+        if (dir === 'right') move(1, 0);
+      });
+    });
+
+    document.querySelectorAll('[data-battle]').forEach(button => {
+      button.addEventListener('click', () => battleAction(button.dataset.battle));
+    });
+
+    document.getElementById('interact-btn').addEventListener('click', interact);
+    document.getElementById('team-btn').addEventListener('click', cycleLead);
+    document.getElementById('journal-btn').addEventListener('click', showJournalHint);
+    document.getElementById('save-btn').addEventListener('click', saveGame);
+    document.getElementById('load-btn').addEventListener('click', loadGame);
+
+    window.addEventListener('keydown', event => {
+      if (ui.starterModal.classList.contains('open')) return;
+      if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') move(0, -1);
+      if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') move(0, 1);
+      if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') move(-1, 0);
+      if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') move(1, 0);
+      if (event.key === 'Enter' || event.key === ' ') interact();
+      if (event.key === 'q' || event.key === 'Q') cycleLead();
+    });
+
+    render();
+    renderStarterModal();
+  </script>
+</body>
+</html>
