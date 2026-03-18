@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Abilities World</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(8, 17, 33, 0.94);
+      --panel-2: rgba(15, 28, 52, 0.92);
+      --line: #2cd6ff;
+      --line-soft: rgba(44, 214, 255, 0.3);
+      --text: #ecf5ff;
+      --muted: #9ec1db;
+      --danger: #ff5579;
+      --good: #65f3b2;
+      --warn: #ffd166;
+      --purple: #9d6cff;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      --tile: 48px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at top, #132a52, #02070f 60%); color: var(--text); font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { display: flex; justify-content: center; align-items: stretch; }
+    button, input, select { font: inherit; }
+
+    #app {
+      width: min(100vw, 1200px);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 420px);
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--line-soft);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+
+    #main-panel { display: flex; flex-direction: column; min-height: 0; }
+    #side-panel { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .title-wrap h1 { font-size: 1.2rem; margin: 0; letter-spacing: 0.06em; }
+    .title-wrap p { margin: 4px 0 0; color: var(--muted); font-size: 0.88rem; }
+
+    .badge-row, .action-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .badge, .chip {
+      border: 1px solid var(--line-soft);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-size: 0.82rem;
+    }
+
+    .action-btn, .small-btn, .move-btn, .dir-btn, .starter-btn {
+      border: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(45, 76, 130, 0.95), rgba(13, 31, 56, 0.95));
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+    }
+    .action-btn:hover, .small-btn:hover, .move-btn:hover, .dir-btn:hover, .starter-btn:hover { transform: translateY(-1px); border-color: var(--line); filter: brightness(1.08); }
+    .action-btn:active, .small-btn:active, .move-btn:active, .dir-btn:active, .starter-btn:active { transform: translateY(1px); }
+    .action-btn.primary { background: linear-gradient(180deg, #2cb4ff, #1157b3); }
+    .action-btn.warn, .move-btn.ultimate { background: linear-gradient(180deg, #ffaf42, #cb5f0e); }
+    .action-btn.danger, .move-btn.domain { background: linear-gradient(180deg, #aa68ff, #5929b2); }
+    .move-btn.negative { background: linear-gradient(180deg, #33415e, #1b2234); }
+
+    #views { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .view { display: none; flex: 1; min-height: 0; }
+    .view.active { display: flex; }
+
+    #exploration-view { flex-direction: column; }
+    #map-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(255,255,255,0.02);
+    }
+    #map-title strong { font-size: 1rem; display: block; }
+    #map-title span { color: var(--muted); font-size: 0.85rem; }
+
+    #map-shell {
+      position: relative;
+      flex: 1;
+      min-height: 420px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    #map-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: 6px;
+      min-height: 0;
+      border-radius: 18px;
+      padding: 10px;
+      background: #091521;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tile {
+      position: relative;
+      border-radius: 12px;
+      min-height: 54px;
+      border: 1px solid rgba(255,255,255,0.05);
+      overflow: hidden;
+      isolation: isolate;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 6px;
+      font-size: 0.74rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .tile::before, .tile::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .tile.safe::before { background: linear-gradient(145deg, rgba(60, 163, 255, 0.28), transparent 50%); }
+    .tile.wild::before { background: linear-gradient(145deg, rgba(77, 255, 160, 0.18), transparent 50%); }
+    .tile.danger::before { background: linear-gradient(145deg, rgba(255, 74, 119, 0.24), transparent 50%); }
+    .tile.rift::before { background: linear-gradient(145deg, rgba(157, 108, 255, 0.3), transparent 50%); }
+
+    .terrain-grass { background: linear-gradient(180deg, #2b865e, #164a35); }
+    .terrain-city { background: linear-gradient(180deg, #4f708f, #24384b); }
+    .terrain-ash { background: linear-gradient(180deg, #74635d, #352723); }
+    .terrain-void { background: linear-gradient(180deg, #322347, #12091d); }
+    .terrain-lightning { background: linear-gradient(180deg, #4f5eb8, #1e255f); }
+    .terrain-water { background: linear-gradient(180deg, #3696c7, #15435d); }
+    .terrain-sand { background: linear-gradient(180deg, #a78f59, #5b4420); }
+
+    .tile-label { position: relative; z-index: 1; text-shadow: 0 2px 3px rgba(0,0,0,0.6); font-weight: 700; }
+    .tile.player::after { display: none; }
+
+    .tile-avatar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 38px;
+      height: 38px;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      filter: drop-shadow(0 0 10px rgba(89, 240, 255, 0.55));
+      pointer-events: none;
+    }
+
+    .tile-glitch::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 0, 255, 0.55) 0 1px, transparent 2px),
+        radial-gradient(circle at 78% 36%, rgba(0, 255, 255, 0.42) 0 1.5px, transparent 3px),
+        radial-gradient(circle at 58% 72%, rgba(255, 77, 166, 0.35) 0 1.5px, transparent 3px);
+      opacity: 0.85;
+      mix-blend-mode: screen;
+      animation: glitchPulse 2.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glitchPulse {
+      from { opacity: 0.35; transform: translate3d(0, 0, 0); }
+      to { opacity: 0.9; transform: translate3d(1px, -1px, 0); }
+    }
+
+    #map-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .card h3 { margin: 0 0 6px; font-size: 0.95rem; }
+    .card p, .card li { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
+    .card ul { padding-left: 18px; margin: 8px 0 0; }
+
+    .meter { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+    .meter > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ff56e5, #4fe3ff); transition: width 0.25s ease; }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: auto;
+    }
+    .dir-btn { min-height: 48px; }
+    .dir-btn.blank { visibility: hidden; }
+
+    #battle-view {
+      flex-direction: column;
+      min-height: 0;
+      background: radial-gradient(circle at top, rgba(78, 15, 53, 0.35), transparent 45%);
+    }
+
+    #battle-scene {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 14px;
+      padding: 16px;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .combatant {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+      padding: 12px;
+      border-radius: 16px;
+    }
+    .combatant.player { flex-direction: row-reverse; }
+
+    .sprite-box {
+      width: min(28vw, 150px);
+      height: min(28vw, 150px);
+      min-width: 112px;
+      min-height: 112px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18));
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .entity-svg { width: 100%; height: 100%; }
+    .entity-svg.pixelated { image-rendering: pixelated; shape-rendering: crispEdges; }
+
+    .capture-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .capture-shard, .capture-flash { position: absolute; opacity: 0; }
+    .capture-shard {
+      width: 28px;
+      height: 28px;
+      left: 8px;
+      top: 8px;
+      transform: rotate(45deg) scale(0.45);
+      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(44,214,255,0.7));
+      border: 2px solid rgba(255,255,255,0.95);
+      box-shadow: 0 0 20px rgba(44,214,255,0.8);
+    }
+    .capture-flash {
+      inset: 18%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,1), rgba(255,255,255,0.08) 68%, transparent 72%);
+      transform: scale(0.3);
+    }
+
+    .capture-layer.active .capture-shard {
+      animation: shardFlight 620ms ease-in forwards;
+      opacity: 1;
+    }
+    .capture-layer.active .capture-flash {
+      animation: flashBurst 420ms ease-out 420ms forwards;
+    }
+    .sprite-box.capture-target.animating svg { animation: spriteShake 120ms linear 4; }
+    .sprite-box.capture-target .entity-svg { transition: transform 320ms ease, opacity 220ms ease; }
+    .sprite-box.capture-target.shrink .entity-svg { transform: scale(0.16); opacity: 0.2; }
+    .sprite-box.capture-target.fade .entity-svg { opacity: 0.55; }
+    .sprite-box.capture-fail { animation: failBounce 320ms ease; }
+
+    @keyframes shardFlight {
+      0% { opacity: 0; transform: translate(0, 0) rotate(45deg) scale(0.4); }
+      20% { opacity: 1; }
+      100% { opacity: 1; transform: translate(78px, 54px) rotate(225deg) scale(1); }
+    }
+    @keyframes flashBurst {
+      0% { opacity: 0; transform: scale(0.2); }
+      35% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0; transform: scale(1.55); }
+    }
+    @keyframes spriteShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-2px); }
+    }
+    @keyframes failBounce {
+      0%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-7px); }
+      65% { transform: translateY(3px); }
+    }
+
+    .info-box { flex: 1; min-width: 0; }
+    .info-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .info-row strong { font-size: 1rem; }
+    .subline { color: var(--muted); font-size: 0.8rem; }
+
+    #battle-status {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    #style-box, #capture-box { padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+    #style-grade { font-size: 1.2rem; font-weight: 800; letter-spacing: 0.08em; color: #ff73ef; }
+
+    #battle-log {
+      min-height: 110px;
+      max-height: 170px;
+      overflow: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.18);
+      padding: 12px;
+      font-size: 0.87rem;
+      line-height: 1.5;
+      color: #dff5ff;
+    }
+    #battle-log p { margin: 0 0 7px; }
+    #battle-log p:last-child { margin-bottom: 0; }
+
+    #move-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .move-btn { text-align: left; min-height: 70px; }
+    .move-btn small { display: block; margin-top: 4px; color: rgba(255,255,255,0.76); }
+
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-head h2, .section-head h3 { margin: 0; font-size: 1rem; }
+
+    .team-list, .inventory-list, .quest-list, .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    .list-item {
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+      padding: 10px 12px;
+      border-radius: 14px;
+    }
+    .list-item strong { display: block; margin-bottom: 4px; }
+    .tiny { font-size: 0.76rem; color: var(--muted); }
+
+    #rank-card {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    #radar {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(45, 214, 255, 0.05), transparent 70%);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    #modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 4, 10, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 100;
+    }
+    #modal.open { display: flex; }
+
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(9, 19, 37, 0.98), rgba(14, 30, 56, 0.98));
+      border: 1px solid var(--line-soft);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .starter-grid, .codex-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .starter-btn {
+      text-align: left;
+      min-height: 120px;
+      padding: 14px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .cutscene {
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 140px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(105, 243, 178, 0.18), transparent 22%),
+        radial-gradient(circle at 80% 30%, rgba(157, 108, 255, 0.24), transparent 24%),
+        linear-gradient(135deg, rgba(0,0,0,0.2), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .cutscene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 2.8s linear infinite;
+    }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+
+    .footer-note {
+      padding: 10px 16px 16px;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    @media (max-width: 980px) {
+      #app { grid-template-columns: 1fr; }
+      #map-shell { grid-template-columns: 1fr; }
+      #rank-card { grid-template-columns: 1fr; justify-items: center; }
+    }
+
+    @media (max-width: 640px) {
+      #app { padding: 10px; gap: 10px; }
+      .topbar, #map-header, #battle-scene { padding: 12px; }
+      #move-grid, #battle-status { grid-template-columns: 1fr; }
+      .sprite-box { min-width: 90px; min-height: 90px; }
+      .combatant, .combatant.player { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <section id="main-panel" class="panel">
+      <header class="topbar">
+        <div class="title-wrap">
+          <h1>Abilities World</h1>
+          <p>Open-world creature battler built from the Adam-to-Gugles lore.</p>
+        </div>
+        <div class="badge-row">
+          <span class="badge" id="player-rank-badge">Base Rank: B-</span>
+          <span class="badge" id="player-clan-badge">Clan: Unchosen</span>
+          <span class="badge" id="player-region-badge">Region: Elemental Territory</span>
+        </div>
+        <div class="action-row">
+          <button class="action-btn primary" id="save-btn">Save</button>
+          <button class="action-btn" id="load-btn">Load</button>
+          <button class="action-btn" id="codex-btn">Lore Codex</button>
+        </div>
+      </header>
+
+      <div id="views">
+        <section id="exploration-view" class="view active">
+          <div id="map-header">
+            <div id="map-title">
+              <strong id="region-name">Elemental Region — Peaceful Asia Corridor</strong>
+              <span id="region-description">A calm territory where elemental creatures, water spirits, and lightning beasts roam beneath clan shrines.</span>
+            </div>
+            <div class="chip" id="danger-chip">Encounter Rate: Moderate</div>
+          </div>
+
+          <div id="map-shell">
+            <div id="map-grid" aria-label="World map grid"></div>
+
+            <aside id="map-sidebar">
+              <div class="card">
+                <h3>Current Objective</h3>
+                <p id="objective-text">Choose a starter, explore the clans, and uncover the first signs of the Gugle invasion.</p>
+              </div>
+              <div class="card">
+                <h3>Controls</h3>
+                <ul>
+                  <li>Move with WASD / Arrow Keys / touch D-pad.</li>
+                  <li>Search tiles for location-based encounters.</li>
+                  <li>Capture weakened entities with Frame Shards or Frame Catchers.</li>
+                </ul>
+              </div>
+              <div class="card">
+                <h3>Threat Meter</h3>
+                <p class="tiny">Rift pressure rises in the In-Between Realm and Neydis war fronts.</p>
+                <div class="meter" aria-hidden="true"><span id="threat-fill" style="width: 32%;"></span></div>
+              </div>
+              <div class="card">
+                <h3>Style Meter</h3>
+                <p class="tiny">Combos, weakness exploitation, and domains raise your style grade.</p>
+                <div class="meter" aria-hidden="true"><span id="style-fill-map" style="width: 8%;"></span></div>
+              </div>
+              <div class="dpad" aria-label="Touch movement controls">
+                <button class="dir-btn blank" aria-hidden="true"></button>
+                <button class="dir-btn" data-dir="up">▲</button>
+                <button class="dir-btn blank" aria-hidden="true"></button>
+                <button class="dir-btn" data-dir="left">◀</button>
+                <button class="dir-btn" data-dir="down">▼</button>
+                <button class="dir-btn" data-dir="right">▶</button>
+              </div>
+              <button class="action-btn warn" id="search-btn">Search Area</button>
+            </aside>
+          </div>
+
+          <div class="footer-note">Timeline references: 1643a (Newton), March 15 1912a (ROP interdimensional travel), 1915a (Gugle invasion), 1950a (ROP formation), 1958 (alien signals after Dyson sphere production).</div>
+        </section>
+
+        <section id="battle-view" class="view">
+          <div id="battle-scene">
+            <div class="combatant enemy">
+              <div class="info-box">
+                <div class="info-row">
+                  <strong id="enemy-name">Mr. Sandman</strong>
+                  <span class="badge" id="enemy-rank">A-</span>
+                </div>
+                <div class="subline" id="enemy-origin">Origin: The In-Between Realm</div>
+                <div class="meter"><span id="enemy-hp-bar" style="width: 100%; background: linear-gradient(90deg, #ff5579, #ff9248);"></span></div>
+                <div class="subline" id="enemy-hp-text">100 / 100 HP</div>
+              </div>
+              <div class="sprite-box capture-target" id="enemy-sprite"><div class="capture-layer" id="capture-layer" aria-hidden="true"><div class="capture-shard"></div><div class="capture-flash"></div></div></div>
+            </div>
+
+            <div id="battle-status">
+              <div id="style-box">
+                <div class="section-head"><h3>Style Meter</h3><span id="style-grade">DULL</span></div>
+                <div class="meter"><span id="style-fill" style="width: 0%;"></span></div>
+                <p class="tiny" id="style-text">Chain stylish attacks to reach FLASH, STORM, and LEGEND.</p>
+              </div>
+              <div id="capture-box">
+                <div class="section-head"><h3>Capture</h3><span class="badge" id="catcher-count">Shards: 1 • Catchers: 5</span></div>
+                <button class="action-btn primary" id="capture-btn">Use Frame Shard</button>
+                <p class="tiny" id="capture-tip">Weaken targets first for the best chance.</p>
+              </div>
+            </div>
+
+            <div class="combatant player">
+              <div class="info-box">
+                <div class="info-row">
+                  <strong id="player-creature-name">Lightning Beast</strong>
+                  <span class="badge" id="player-creature-rank">B+</span>
+                </div>
+                <div class="subline" id="player-creature-type">Elemental / Starter</div>
+                <div class="meter"><span id="player-hp-bar" style="width: 100%; background: linear-gradient(90deg, #65f3b2, #2cd6ff);"></span></div>
+                <div class="subline" id="player-hp-text">100 / 100 HP</div>
+              </div>
+              <div class="sprite-box" id="player-sprite"></div>
+            </div>
+
+            <div id="battle-log" aria-live="polite"></div>
+
+            <div id="move-grid">
+              <button class="move-btn basic" data-move="basic"><strong id="basic-name">Lightning Strike</strong><small id="basic-desc">Basic Ability</small></button>
+              <button class="move-btn negative" data-move="negative"><strong id="negative-name">Static Drain</strong><small id="negative-desc">Negative Ability</small></button>
+              <button class="move-btn ultimate" data-move="ultimate"><strong id="ultimate-name">100M Volt Dragon</strong><small id="ultimate-desc">Ultimate Move</small></button>
+              <button class="move-btn domain" data-move="domain"><strong id="domain-name">Thunderstorm World</strong><small id="domain-desc">Domain Expansion</small></button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <aside id="side-panel">
+      <section class="panel stack" style="padding:16px;">
+        <div class="section-head">
+          <h2>Player & Rank Pentagon</h2>
+          <span class="chip" id="generation-chip">Year System: a-era</span>
+        </div>
+        <div id="rank-card">
+          <canvas id="radar" width="150" height="150"></canvas>
+          <div>
+            <p id="rank-summary" style="margin:0 0 10px; color:var(--muted);">Base ranking reflects visible strength, while the pentagon tracks Powers, Abilities, Inelegance, Speed, and Strength.</p>
+            <div class="badge-row" id="stat-badges"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel stack" style="padding:16px;">
+        <div class="section-head">
+          <h2>Team</h2>
+          <button class="small-btn" id="swap-btn">Cycle Lead</button>
+        </div>
+        <div id="team-list" class="team-list"></div>
+      </section>
+
+      <section class="panel stack" style="padding:16px;">
+        <div class="section-head">
+          <h2>Inventory</h2>
+          <span class="chip">Save-backed</span>
+        </div>
+        <div id="inventory-list" class="inventory-list"></div>
+      </section>
+
+      <section class="panel stack" style="padding:16px;">
+        <div class="section-head">
+          <h2>Story Missions</h2>
+          <button class="small-btn" id="story-btn">Play Story Beat</button>
+        </div>
+        <div id="quest-list" class="quest-list"></div>
+        <div class="cutscene" id="cutscene-box">
+          <strong id="cutscene-title">Cutscene Ready</strong>
+          <p id="cutscene-text" style="margin:8px 0 0; color:var(--muted); line-height:1.5;">Witness key moments such as Wally's awakening, Einstein's final warning of “peace”, the 1915a Gugle invasion, and Mr. Sandman's containment breaches.</p>
+        </div>
+      </section>
+
+      <section class="panel stack" style="padding:16px;">
+        <div class="section-head">
+          <h2>Recent Events</h2>
+          <span class="chip">World Feed</span>
+        </div>
+        <div id="event-list" class="event-list"></div>
+      </section>
+    </aside>
+  </div>
+
+  <div id="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="section-head">
+        <h2 id="modal-title">Choose a Starter</h2>
+        <button class="small-btn" id="close-modal-btn">Close</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const gradeOrder = ["F", "D", "C", "B", "A"];
+    const gradeValues = {
+      "F-": 0.06, "F": 0.12, "F+": 0.18,
+      "D-": 0.26, "D": 0.32, "D+": 0.38,
+      "C-": 0.46, "C": 0.52, "C+": 0.58,
+      "B-": 0.66, "B": 0.72, "B+": 0.78,
+      "A-": 0.86, "A": 0.92, "A+": 0.98,
+      "S": 1
+    };
+
+    const loreEntries = [
+      {
+        title: "History & Creation",
+        text: "Adam was created in God's image with light, while Eve controlled plants. Their descendants passed abilities through bloodlines until fear of powers triggered the first great war 5000 years after Adam. The calendar resets every 5000 years and appends generation letters such as 1643a or 1919b."
+      },
+      {
+        title: "ACOTW",
+        text: "The Advanced Children of the World grew out of Isaac Newton's AHRT in 1643a, later including Einstein, Tesla, and Hawking. They pioneered teleportation in 1910a, colonies on the moon, a Mars society with hypertubes, and the Dyson sphere program."
+      },
+      {
+        title: "ROP & HRW",
+        text: "Ability lockers were pushed by the HRW in 1912a, the same year the ROP invented interdimensional travel on March 15 1912a. After a failed war in 1950a, the Republic of People consolidated North and most of South America plus the poles."
+      },
+      {
+        title: "Gugles",
+        text: "Gugles are green slug-like parasites that enter through the ear, seize the nervous center, and telepathically communicate. They attacked openly in 1915a after signals tied to the ACOTW Dyson sphere, seeking human abilities for universal colonization."
+      },
+      {
+        title: "Fractured Frame Monsters",
+        text: "Mr. Sandman, Frame Walker, Silent Time, Ledger Warden, Core Breaker, Mirror Regiment, Blackout Leviathan, Ash Judge, Drought King, and Skybreaker Colossus emerge from rifts, frames, soul constructs, and anti-bio experiments."
+      }
+    ];
+
+    const TILE_TYPES = {
+      grass: { className: "terrain-grass", label: "Elemental Wilds" },
+      city: { className: "terrain-city", label: "ACOTW Arcology" },
+      ash: { className: "terrain-ash", label: "Flint Expanse" },
+      water: { className: "terrain-water", label: "Tide Corridor" },
+      lightning: { className: "terrain-lightning", label: "Neydis Front" },
+      sand: { className: "terrain-sand", label: "ROP Occupation" },
+      in_between: { className: "terrain-void", label: "In-Between Realm", glitch: true }
+    };
+
+    const SPRITES = {
+      player: {
+        down: `<svg class="entity-svg pixelated" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Frame Catcher facing down">
+          <rect x="22" y="8" width="20" height="16" fill="#f3d5b5"/>
+          <rect x="22" y="8" width="20" height="6" fill="#362414"/>
+          <rect x="20" y="24" width="24" height="22" fill="#203248"/>
+          <rect x="28" y="28" width="8" height="8" fill="#00f6ff" opacity=".8"/>
+          <rect x="16" y="24" width="6" height="16" fill="#38526b"/>
+          <rect x="42" y="24" width="6" height="16" fill="#38526b"/>
+          <rect x="18" y="28" width="4" height="4" fill="#ffb347"/>
+          <rect x="24" y="46" width="8" height="12" fill="#141b28"/>
+          <rect x="32" y="46" width="8" height="12" fill="#0c1320"/>
+        </svg>`,
+        up: `<svg class="entity-svg pixelated" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Frame Catcher facing up">
+          <rect x="22" y="8" width="20" height="16" fill="#4b3423"/>
+          <rect x="24" y="12" width="16" height="12" fill="#f3d5b5" opacity=".25"/>
+          <rect x="20" y="24" width="24" height="22" fill="#203248"/>
+          <rect x="24" y="26" width="16" height="12" fill="#2e475f"/>
+          <rect x="18" y="26" width="4" height="12" fill="#38526b"/>
+          <rect x="42" y="26" width="4" height="12" fill="#38526b"/>
+          <rect x="24" y="46" width="8" height="12" fill="#141b28"/>
+          <rect x="32" y="46" width="8" height="12" fill="#0c1320"/>
+          <rect x="27" y="30" width="10" height="6" fill="#00d5ff" opacity=".55"/>
+        </svg>`,
+        left: `<svg class="entity-svg pixelated" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Frame Catcher facing left">
+          <rect x="20" y="8" width="18" height="16" fill="#f3d5b5"/>
+          <rect x="18" y="8" width="22" height="6" fill="#362414"/>
+          <rect x="18" y="24" width="22" height="22" fill="#203248"/>
+          <rect x="24" y="28" width="8" height="8" fill="#00f6ff" opacity=".82"/>
+          <rect x="12" y="26" width="8" height="15" fill="#38526b"/>
+          <rect x="40" y="26" width="5" height="14" fill="#38526b"/>
+          <rect x="9" y="30" width="7" height="5" fill="#ffb347"/>
+          <rect x="20" y="46" width="8" height="12" fill="#141b28"/>
+          <rect x="30" y="46" width="8" height="12" fill="#0c1320"/>
+        </svg>`,
+        right: `<svg class="entity-svg pixelated" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Frame Catcher facing right">
+          <rect x="26" y="8" width="18" height="16" fill="#f3d5b5"/>
+          <rect x="24" y="8" width="22" height="6" fill="#362414"/>
+          <rect x="24" y="24" width="22" height="22" fill="#203248"/>
+          <rect x="30" y="28" width="8" height="8" fill="#00f6ff" opacity=".82"/>
+          <rect x="19" y="26" width="5" height="14" fill="#38526b"/>
+          <rect x="44" y="26" width="8" height="15" fill="#38526b"/>
+          <rect x="48" y="30" width="7" height="5" fill="#ffb347"/>
+          <rect x="26" y="46" width="8" height="12" fill="#141b28"/>
+          <rect x="36" y="46" width="8" height="12" fill="#0c1320"/>
+        </svg>`
+      },
+      creatures: {
+        mrSandman: size => `<svg class="entity-svg pixelated" width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Mr. Sandman">
+          <rect x="28" y="8" width="8" height="10" fill="#1a1a1a"/>
+          <rect x="26" y="12" width="12" height="10" fill="#111111"/>
+          <rect x="29" y="14" width="2" height="2" fill="#bc13fe"/>
+          <rect x="33" y="14" width="2" height="2" fill="#bc13fe"/>
+          <path d="M24 22h16l5 28h-6l-3-12h-8l-3 12h-6z" fill="#392d24"/>
+          <path d="M18 26l-5 15h4l4-12zm28 0 5 15h-4l-4-12z" fill="#1a1a1a"/>
+          <rect x="20" y="52" width="24" height="4" fill="#4b0082" opacity=".45"/>
+          <circle cx="32" cy="30" r="12" fill="#bc13fe" opacity=".16"/>
+        </svg>`,
+        frameWalker: size => `<svg class="entity-svg pixelated" width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Frame Walker">
+          <rect x="24" y="8" width="16" height="40" fill="#2f3540" stroke="#00ff88" stroke-width="1"/>
+          <rect x="26" y="14" width="12" height="5" fill="#00ff88" opacity=".88"/>
+          <rect x="20" y="18" width="4" height="20" fill="#555"/>
+          <rect x="40" y="18" width="4" height="20" fill="#555"/>
+          <rect x="22" y="48" width="6" height="10" fill="#666"/>
+          <rect x="36" y="48" width="6" height="10" fill="#666"/>
+          <rect x="15" y="12" width="10" height="10" fill="none" stroke="#ff00ff" stroke-width=".75" opacity=".65"/>
+          <rect x="45" y="40" width="8" height="8" fill="none" stroke="#00ffff" stroke-width=".75" opacity=".65"/>
+        </svg>`,
+        waterSpirit: size => `<svg class="entity-svg pixelated" width="${size}" height="${size}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-label="Water Spirit">
+          <ellipse cx="40" cy="65" rx="20" ry="6" fill="#001133" opacity=".5"/>
+          <path d="M40 15 Q60 40 40 60 Q20 40 40 15 Z" fill="#0066cc" stroke="#00ffff" stroke-width="2" opacity=".9"/>
+          <path d="M40 25 Q50 40 40 50 Q30 40 40 25 Z" fill="#003388" opacity=".8"/>
+          <circle cx="34" cy="38" r="3" fill="#ffffff" opacity=".9"/>
+          <circle cx="46" cy="38" r="3" fill="#ffffff" opacity=".9"/>
+          <path d="M25 45 Q20 30 35 25" stroke="#00ffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M55 45 Q60 30 45 25" stroke="#00ffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="40" cy="52" r="2" fill="#00ffff" opacity=".6"/>
+          <circle cx="40" cy="48" r="1.5" fill="#00ffff" opacity=".8"/>
+        </svg>`
+      }
+    };
+
+    const creatures = {
+      lightningBeast: {
+        id: "lightningBeast",
+        name: "Lightning Beast",
+        role: "Starter",
+        rank: "B+",
+        rarity: "A",
+        region: ["elemental", "neydis"],
+        origin: "Elemental Clan",
+        family: "Elemental",
+        stats: { powers: "A", abilities: "A-", inelegance: "C+", speed: "A", strength: "B+" },
+        maxHp: 116,
+        currentHp: 116,
+        captureRate: 0.18,
+        ability: "Lightning Strike",
+        negative: "Static Drain",
+        ultimate: "100M Volt Dragon",
+        domain: "Thunderstorm World",
+        description: "An elemental predator shaped from lightning manipulation, conductive weapon forms, and power-line infiltration.",
+        moves: {
+          basic: { label: "Lightning Strike", damage: 14, style: 12, text: "Crackling arcs rake the target and raise your combo." },
+          negative: { label: "Static Drain", damage: 10, style: 16, heal: 6, text: "The negative ability siphons voltage and restores the user." },
+          ultimate: { label: "100M Volt Dragon", damage: 28, style: 24, text: "The beast rises as a dragon of living lightning and crashes down with 100 million volts." },
+          domain: { label: "Thunderstorm World", damage: 22, style: 22, domain: true, text: "Storm clouds fill the arena and every conductive surface becomes a weapon." }
+        },
+        sprite: { kind: "lightning", primary: "#57e5ff", secondary: "#0f62ff" }
+      },
+      waterSpirit: {
+        id: "waterSpirit",
+        name: "Water Spirit",
+        role: "Starter",
+        rank: "B",
+        rarity: "B+",
+        region: ["elemental", "inbetween"],
+        origin: "Elemental Clan",
+        family: "Elemental",
+        stats: { powers: "B+", abilities: "B", inelegance: "C", speed: "B", strength: "C+" },
+        maxHp: 124,
+        currentHp: 124,
+        captureRate: 0.22,
+        ability: "Water Vortex",
+        negative: "Steam Veil",
+        ultimate: "300m Tsunami",
+        domain: "Infinite Beach Domain",
+        description: "A graceful controller of water, ice, and steam that carries reservoirs everywhere it travels.",
+        moves: {
+          basic: { label: "Water Vortex", damage: 12, style: 10, text: "A spiraling current batters the foe and resets battlefield pressure." },
+          negative: { label: "Steam Veil", damage: 8, style: 14, shield: 0.2, text: "Steam blinds the enemy and softens the next strike." },
+          ultimate: { label: "300m Tsunami", damage: 30, style: 20, exhaust: true, text: "A colossal wave tears across the field, but the caster is exhausted afterward." },
+          domain: { label: "Infinite Beach Domain", damage: 18, style: 18, domain: true, text: "A beach without end grants microscopic command over every droplet." }
+        },
+        sprite: { kind: "water", primary: "#54cbff", secondary: "#0e507c" }
+      },
+      slimeCore: {
+        id: "slimeCore",
+        name: "Slime Creature",
+        role: "Starter",
+        rank: "B-",
+        rarity: "B",
+        region: ["flint", "acotw", "inbetween"],
+        origin: "Flint Gene-Lines",
+        family: "Flint",
+        stats: { powers: "B", abilities: "B+", inelegance: "B", speed: "C+", strength: "B-" },
+        maxHp: 132,
+        currentHp: 132,
+        captureRate: 0.26,
+        ability: "Morph Lash",
+        negative: "Core Shell",
+        ultimate: "Assimilation Wave",
+        domain: "Slime Cathedral",
+        description: "A mutable Flint-born entity hiding a vulnerable core that can absorb memories and techniques.",
+        moves: {
+          basic: { label: "Morph Lash", damage: 13, style: 9, text: "The slime hardens into a whip-blade and cracks the target." },
+          negative: { label: "Core Shell", damage: 7, style: 13, heal: 4, text: "The body compresses around the core, lessening damage and knitting itself back together." },
+          ultimate: { label: "Assimilation Wave", damage: 26, style: 20, text: "A devouring surge tries to absorb enemy knowledge and reshape matter." },
+          domain: { label: "Slime Cathedral", damage: 19, style: 21, domain: true, text: "The battlefield becomes a living gel where every surface can trap and consume." }
+        },
+        sprite: { kind: "slime", primary: "#71ffbc", secondary: "#2a8f66" }
+      },
+      mrSandman: {
+        id: "mrSandman",
+        name: "Mr. Sandman",
+        role: "Boss",
+        rank: "A-",
+        rarity: "S",
+        region: ["inbetween", "rop"],
+        origin: "The In-Between Realm",
+        family: "Fractured Frame",
+        stats: { powers: "A", abilities: "A", inelegance: "B", speed: "B+", strength: "B+" },
+        maxHp: 124,
+        currentHp: 124,
+        captureRate: 0.08,
+        ability: "Sandman Curse",
+        negative: "Reality Lock",
+        ultimate: "Unknown Multiplication",
+        domain: "Containment Breach",
+        description: "A faceless humanoid in a 1950a brown coat whose gaze erodes bodily control and multiplies through victims.",
+        moves: {
+          basic: { label: "Sandman Curse", damage: 15, style: 14, text: "Eye contact begins the curse and shakes the foe's control." },
+          negative: { label: "Reality Lock", damage: 9, style: 12, debuff: 0.2, text: "Resistance is sealed; the next hostile effect becomes unavoidable." },
+          ultimate: { label: "Unknown Multiplication", damage: 29, style: 22, text: "Victim-shadows branch from the original entity and attack in unison." },
+          domain: { label: "Containment Breach", damage: 20, style: 20, domain: true, text: "The room flickers into an SCP alarm-state where every reflection could be Sandman." }
+        },
+        sprite: { kind: "sandman", primary: "#9b8354", secondary: "#3c2b1d" }
+      },
+      frameWalker: {
+        id: "frameWalker",
+        name: "Frame Walker",
+        role: "Boss",
+        rank: "A",
+        rarity: "S",
+        region: ["neydis", "inbetween"],
+        origin: "Pre-reality anomaly",
+        family: "Fractured Frame",
+        stats: { powers: "A", abilities: "A+", inelegance: "D", speed: "A", strength: "B" },
+        maxHp: 118,
+        currentHp: 118,
+        captureRate: 0.05,
+        ability: "Frame Immunity",
+        negative: "Temporal Override",
+        ultimate: "Behind You Forever",
+        domain: "Acknowledge Me",
+        description: "A pre-reality anomaly that cannot be frozen, skipped, or altered by frame abilities, always distant and somehow behind you.",
+        moves: {
+          basic: { label: "Frame Immunity", damage: 14, style: 16, text: "The entity slips through frame tricks and strikes from impossible timing." },
+          negative: { label: "Temporal Override", damage: 11, style: 13, text: "Recorded time fractures and the opponent loses turn order certainty." },
+          ultimate: { label: "Behind You Forever", damage: 27, style: 20, text: "Every blind spot becomes the Walker's attack vector." },
+          domain: { label: "Acknowledge Me", damage: 18, style: 18, domain: true, text: "Only direct acknowledgment weakens the anomaly inside a silent frame chamber." }
+        },
+        sprite: { kind: "walker", primary: "#d8ddff", secondary: "#6f74b8" }
+      },
+      ledgerWarden: {
+        id: "ledgerWarden",
+        name: "Ledger Warden",
+        role: "Boss",
+        rank: "A-",
+        rarity: "S",
+        region: ["rop", "inbetween"],
+        origin: "Soul Accumulation Construct",
+        family: "Soul Entity",
+        stats: { powers: "A-", abilities: "A", inelegance: "C", speed: "C+", strength: "A-" },
+        maxHp: 130,
+        currentHp: 130,
+        captureRate: 0.07,
+        ability: "Life Reflection",
+        negative: "Soul Weight",
+        ultimate: "Judgment Balance",
+        domain: "Debt of Lifespans",
+        description: "A reaper-like construct that mirrors stolen life and crushes targets with gravity proportional to guilt.",
+        moves: {
+          basic: { label: "Life Reflection", damage: 13, style: 12, text: "Stolen lifespan rebounds through mirrored chains." },
+          negative: { label: "Soul Weight", damage: 12, style: 14, text: "Guilt becomes gravity and drags the target down." },
+          ultimate: { label: "Judgment Balance", damage: 31, style: 18, text: "The ledger weighs debt and slams the battlefield shut." },
+          domain: { label: "Debt of Lifespans", damage: 21, style: 20, domain: true, text: "Every action is taxed in years until a true sacrifice clears the account." }
+        },
+        sprite: { kind: "reaper", primary: "#c9f2ff", secondary: "#405463" }
+      },
+      silentTime: {
+        id: "silentTime",
+        name: "Silent Time",
+        role: "Boss",
+        rank: "A",
+        rarity: "S",
+        region: ["inbetween"],
+        origin: "Unknown",
+        family: "Domain Entity",
+        stats: { powers: "A", abilities: "A", inelegance: "F", speed: "B", strength: "B" },
+        maxHp: 122,
+        currentHp: 122,
+        captureRate: 0.04,
+        ability: "Drowning Interval",
+        negative: "No Escape",
+        ultimate: "Five Minutes Forever",
+        domain: "Silent Time Domain",
+        description: "An entity that traps victims in a drowning eternity that lasts only five minutes outside the domain.",
+        moves: {
+          basic: { label: "Drowning Interval", damage: 16, style: 12, text: "Cold water fills the victim's lungs in a blink." },
+          negative: { label: "No Escape", damage: 10, style: 12, text: "Prayer is the only answer because no known weakness exists." },
+          ultimate: { label: "Five Minutes Forever", damage: 32, style: 18, text: "Time stretches into endless drowning terror." },
+          domain: { label: "Silent Time Domain", damage: 22, style: 20, domain: true, text: "The arena floods into a silent prison of eternal panic." }
+        },
+        sprite: { kind: "watervoid", primary: "#a9deff", secondary: "#27385c" }
+      },
+      gugleParasite: {
+        id: "gugleParasite",
+        name: "Gugle Parasite",
+        role: "Alien",
+        rank: "B+",
+        rarity: "A-",
+        region: ["acotw", "rop", "elemental"],
+        origin: "Intergalactic invasive species",
+        family: "Gugles",
+        stats: { powers: "B", abilities: "A-", inelegance: "D", speed: "B", strength: "C+" },
+        maxHp: 104,
+        currentHp: 104,
+        captureRate: 0.19,
+        ability: "Ear Infiltration",
+        negative: "Telepathic Net",
+        ultimate: "Government Takeover",
+        domain: "Colonization Signal",
+        description: "A green slug-like parasite that enters through the ear, seizes the nervous center, and weaponizes telepathy.",
+        moves: {
+          basic: { label: "Ear Infiltration", damage: 12, style: 11, text: "The parasite lunges for the nervous center." },
+          negative: { label: "Telepathic Net", damage: 8, style: 15, text: "The foe is wrapped in thoughts that are not their own." },
+          ultimate: { label: "Government Takeover", damage: 25, style: 19, text: "Influence chains through command structures and seized hosts." },
+          domain: { label: "Colonization Signal", damage: 17, style: 17, domain: true, text: "A cosmic broadcast lowers resistance across the field." }
+        },
+        sprite: { kind: "gugle", primary: "#62ff75", secondary: "#0f5b22" }
+      },
+      frameFreezeEntity: {
+        id: "frameFreezeEntity",
+        name: "Frame Freeze Entity",
+        role: "Rare",
+        rank: "B+",
+        rarity: "A",
+        region: ["neydis", "acotw"],
+        origin: "Neydis frame-line",
+        family: "Frame",
+        stats: { powers: "B+", abilities: "A", inelegance: "C", speed: "A-", strength: "B" },
+        maxHp: 108,
+        currentHp: 108,
+        captureRate: 0.17,
+        ability: "Frame Freeze",
+        negative: "Frame Break",
+        ultimate: "Four Hit Sequence",
+        domain: "Movie Studio Domain",
+        description: "A capture-worthy descendant of Neydis techniques that freezes targets for lethal one-second openings.",
+        moves: {
+          basic: { label: "Frame Freeze", damage: 13, style: 15, text: "One frame of helplessness opens the target to punishment." },
+          negative: { label: "Frame Break", damage: 9, style: 14, text: "Frozen snapshots shatter into extra damage." },
+          ultimate: { label: "Four Hit Sequence", damage: 27, style: 20, text: "Successive freezes stack a brutal combo chain." },
+          domain: { label: "Movie Studio Domain", damage: 19, style: 18, domain: true, text: "The world becomes a production floor of saved and loaded attacks." }
+        },
+        sprite: { kind: "frame", primary: "#ffd479", secondary: "#684d1f" }
+      },
+      skybreaker: {
+        id: "skybreaker",
+        name: "Skybreaker Colossus",
+        role: "Boss",
+        rank: "A+",
+        rarity: "S",
+        region: ["neydis", "acotw"],
+        origin: "Gravity Titan",
+        family: "Titan",
+        stats: { powers: "A+", abilities: "A", inelegance: "D", speed: "C", strength: "A+" },
+        maxHp: 140,
+        currentHp: 140,
+        captureRate: 0.03,
+        ability: "Gravity Inversion",
+        negative: "Aerial Suppression",
+        ultimate: "Skybreaker Fall",
+        domain: "Anchored Horizon",
+        description: "A gravity titan that inverts battlefields and crushes aerial foes unless grounded by anchoring techniques.",
+        moves: {
+          basic: { label: "Gravity Inversion", damage: 16, style: 12, text: "The arena flips and momentum betrays the target." },
+          negative: { label: "Aerial Suppression", damage: 12, style: 12, text: "Flight is denied and the air itself becomes hostile." },
+          ultimate: { label: "Skybreaker Fall", damage: 34, style: 20, text: "A titanic slam buries the battlefield under broken gravity." },
+          domain: { label: "Anchored Horizon", damage: 23, style: 18, domain: true, text: "Only grounded resolve can resist the titan's rule." }
+        },
+        sprite: { kind: "colossus", primary: "#d7def3", secondary: "#56637e" }
+      }
+    };
+
+    const regions = [
+      {
+        id: "elemental",
+        name: "Elemental Region — Peaceful Asia Corridor",
+        short: "Elemental",
+        description: "Fire, water, air, earth, and lightning lineages coexist in a peaceful Asia-spanning clan federation.",
+        encounterRate: 0.42,
+        danger: "Moderate",
+        terrain: "terrain-grass",
+        mood: "safe",
+        encounterTable: ["lightningBeast", "waterSpirit", "slimeCore", "gugleParasite"],
+        questHint: "Meet the elemental starters and investigate unusual signals over the clan shrines."
+      },
+      {
+        id: "acotw",
+        name: "ACOTW Mars Colony",
+        short: "ACOTW",
+        description: "A high-tech Mars civilization of teleporters, hypertubes, research towers, and coexisting powered citizens.",
+        encounterRate: 0.36,
+        danger: "Controlled",
+        terrain: "terrain-city",
+        mood: "safe",
+        encounterTable: ["frameFreezeEntity", "gugleParasite", "slimeCore", "skybreaker"],
+        questHint: "Trace Dyson sphere broadcasts and recover sealed council records after Einstein's final message."
+      },
+      {
+        id: "rop",
+        name: "ROP Territory",
+        short: "ROP",
+        description: "The Republic of People fields anti-ability tech, ability lockers, and militarized dimensional laboratories across the Americas.",
+        encounterRate: 0.49,
+        danger: "High",
+        terrain: "terrain-sand",
+        mood: "danger",
+        encounterTable: ["mrSandman", "ledgerWarden", "gugleParasite", "slimeCore"],
+        questHint: "Find evidence of March 15 1912a interdimensional experiments and ability locker prototypes."
+      },
+      {
+        id: "inbetween",
+        name: "In-Between Realm",
+        short: "In-Between",
+        description: "A realm between worlds where spirits return broken, rifts widen, and SCP-style monsters stalk warped frames.",
+        encounterRate: 0.67,
+        danger: "Extreme",
+        terrain: "terrain-void",
+        mood: "rift",
+        encounterTable: ["mrSandman", "frameWalker", "silentTime", "ledgerWarden", "waterSpirit"],
+        questHint: "Seal the breach, survive Silent Time, and identify where the original Mr. Sandman hides."
+      },
+      {
+        id: "neydis",
+        name: "Neydis War Zone",
+        short: "Neydis",
+        description: "Wally's frame-obsessed empire in South and West Africa wages brutal wars to purge the non-powered.",
+        encounterRate: 0.58,
+        danger: "Severe",
+        terrain: "terrain-lightning",
+        mood: "danger",
+        encounterTable: ["frameFreezeEntity", "frameWalker", "lightningBeast", "skybreaker"],
+        questHint: "Confront frame militias, uncover Wally's clones, and sabotage purification fronts."
+      },
+      {
+        id: "flint",
+        name: "Flint Continent",
+        short: "Flint",
+        description: "Australia-sized powerhouses of transforming control, cloning, and slime manipulation dominate the Flint homeland.",
+        encounterRate: 0.44,
+        danger: "Moderate",
+        terrain: "terrain-ash",
+        mood: "wild",
+        encounterTable: ["slimeCore", "gugleParasite", "frameFreezeEntity"],
+        questHint: "Negotiate with Flint shapeshifters and locate a rumored fusion altar."
+      }
+    ];
+
+    function generateMap() {
+      const width = 10;
+      const height = 8;
+      const centerX = (width - 1) / 2;
+      const centerY = (height - 1) / 2;
+      return Array.from({ length: height }, (_, y) => (
+        Array.from({ length: width }, (_, x) => {
+          const distFromCenter = Math.hypot(x - centerX, y - centerY);
+          let regionId = "elemental";
+          let tileType = "grass";
+          if (distFromCenter > 4 || (x >= 8 && y >= 3) || (x >= 4 && y >= 4)) {
+            regionId = "inbetween";
+            tileType = "in_between";
+          } else if (x <= 1 && y <= 2) {
+            regionId = "acotw";
+            tileType = "city";
+          } else if (x <= 3 && y >= 4) {
+            regionId = "neydis";
+            tileType = "lightning";
+          } else if (x >= 6) {
+            regionId = "rop";
+            tileType = "sand";
+          } else if (x >= 3 && y >= 2) {
+            regionId = "flint";
+            tileType = y === 3 ? "water" : "ash";
+          }
+          return { regionId, tileType };
+        })
+      ));
+    }
+
+    const generatedMap = generateMap();
+
+    const storyBeats = [
+      {
+        title: "Wally Awakens",
+        text: "In the early Neydis era, Wally slows reality to study it frame by frame, then vows to build the 'best human' by cloning and purging the unpowered.",
+        reward: { frameShards: 1 },
+        event: "You recover a frame shard etched with Wally's obsession over Walt Disney-style motion."
+      },
+      {
+        title: "Einstein's Last Word",
+        text: "Albert Einstein discovers infinite life but conceals it, fearing abuse. On his deathbed, after understanding the universe's end, his final word is 'peace'.",
+        reward: { boosters: 1 },
+        event: "An ACOTW archive grants an Ability Booster after you decode a council cache."
+      },
+      {
+        title: "March 15 1912a",
+        text: "The ROP invents interdimensional travel and rips open the path to the In-Between Realm, helping unleash entities that do not obey conventional physics.",
+        reward: { catchers: 1 },
+        event: "A dimensional lab yields a spare Frame Catcher and raises global threat pressure."
+      },
+      {
+        title: "1915a Invasion",
+        text: "The Gugles reveal their true nature and seize hosts across the planet, turning governments and heroes alike into colonization vectors.",
+        reward: { essence: 1 },
+        event: "A Gugle Essence can now be used to trigger fusion research in Flint territory."
+      },
+      {
+        title: "Containment Breach",
+        text: "Mr. Sandman slips loose again, wearing a coat from a future frame and multiplying through victims whose control he steals with one look.",
+        reward: { shards: 1 },
+        event: "SCP sirens echo through the In-Between Realm, increasing rare encounter odds."
+      }
+    ];
+
+    const defaultState = () => ({
+      playerName: "Rift Runner",
+      clan: "Unchosen",
+      playerRank: "B-",
+      currentStoryIndex: 0,
+      objective: "Choose a starter, explore the clans, and uncover the first signs of the Gugle invasion.",
+      position: { x: 3, y: 1 },
+      playerDirection: "down",
+      style: 8,
+      styleGrade: "DULL",
+      threat: 32,
+      inventory: {
+        catchers: 5,
+        boosters: 1,
+        frameShards: 1,
+        gugleEssence: 0,
+        abilityLockers: 0
+      },
+      quests: [
+        { title: "A New Inheritor", text: "Pick a starter from elemental, Flint, or frame-blooded lines.", done: false },
+        { title: "Rift Research", text: "Enter the In-Between Realm and survive your first entity encounter.", done: false },
+        { title: "Signals from 1958", text: "Investigate the strange broadcasts linked to Dyson sphere production.", done: false }
+      ],
+      events: [
+        "The council repeats the old warning: ROP experiments with dimensions threaten all humanity.",
+        "A public archive recounts Adam's light and Eve's plants as the source of all powers."
+      ],
+      team: [],
+      activeIndex: 0,
+      battle: null,
+      starterChosen: false,
+      encountered: []
+    });
+
+    let state = defaultState();
+
+    const el = {
+      mapGrid: document.getElementById("map-grid"),
+      regionName: document.getElementById("region-name"),
+      regionDescription: document.getElementById("region-description"),
+      dangerChip: document.getElementById("danger-chip"),
+      threatFill: document.getElementById("threat-fill"),
+      objectiveText: document.getElementById("objective-text"),
+      playerRankBadge: document.getElementById("player-rank-badge"),
+      playerClanBadge: document.getElementById("player-clan-badge"),
+      playerRegionBadge: document.getElementById("player-region-badge"),
+      statBadges: document.getElementById("stat-badges"),
+      radar: document.getElementById("radar"),
+      teamList: document.getElementById("team-list"),
+      inventoryList: document.getElementById("inventory-list"),
+      questList: document.getElementById("quest-list"),
+      eventList: document.getElementById("event-list"),
+      cutsceneTitle: document.getElementById("cutscene-title"),
+      cutsceneText: document.getElementById("cutscene-text"),
+      generationChip: document.getElementById("generation-chip"),
+      styleFillMap: document.getElementById("style-fill-map"),
+      battleView: document.getElementById("battle-view"),
+      explorationView: document.getElementById("exploration-view"),
+      enemyName: document.getElementById("enemy-name"),
+      enemyRank: document.getElementById("enemy-rank"),
+      enemyOrigin: document.getElementById("enemy-origin"),
+      enemyHpBar: document.getElementById("enemy-hp-bar"),
+      enemyHpText: document.getElementById("enemy-hp-text"),
+      enemySprite: document.getElementById("enemy-sprite"),
+      captureLayer: document.getElementById("capture-layer"),
+      playerCreatureName: document.getElementById("player-creature-name"),
+      playerCreatureRank: document.getElementById("player-creature-rank"),
+      playerCreatureType: document.getElementById("player-creature-type"),
+      playerHpBar: document.getElementById("player-hp-bar"),
+      playerHpText: document.getElementById("player-hp-text"),
+      playerSprite: document.getElementById("player-sprite"),
+      battleLog: document.getElementById("battle-log"),
+      styleGrade: document.getElementById("style-grade"),
+      styleFill: document.getElementById("style-fill"),
+      styleText: document.getElementById("style-text"),
+      catcherCount: document.getElementById("catcher-count"),
+      captureTip: document.getElementById("capture-tip"),
+      basicName: document.getElementById("basic-name"),
+      basicDesc: document.getElementById("basic-desc"),
+      negativeName: document.getElementById("negative-name"),
+      negativeDesc: document.getElementById("negative-desc"),
+      ultimateName: document.getElementById("ultimate-name"),
+      ultimateDesc: document.getElementById("ultimate-desc"),
+      domainName: document.getElementById("domain-name"),
+      domainDesc: document.getElementById("domain-desc"),
+      modal: document.getElementById("modal"),
+      modalTitle: document.getElementById("modal-title"),
+      modalBody: document.getElementById("modal-body")
+    };
+
+    function cloneCreature(id) {
+      const c = creatures[id];
+      return JSON.parse(JSON.stringify(c));
+    }
+
+    function getRegionById(id) {
+      return regions.find(r => r.id === id);
+    }
+
+    function currentRegion() {
+      return getRegionById(generatedMap[state.position.y][state.position.x].regionId);
+    }
+
+    function activeCreature() {
+      return state.team[state.activeIndex] || null;
+    }
+
+    function addEvent(text) {
+      state.events.unshift(text);
+      state.events = state.events.slice(0, 12);
+      renderEvents();
+    }
+
+    function updateObjective(text) {
+      state.objective = text;
+      el.objectiveText.textContent = text;
+    }
+
+    function styleLabel(value) {
+      if (value >= 85) return "LEGEND";
+      if (value >= 65) return "STORM";
+      if (value >= 40) return "FLASH";
+      if (value >= 20) return "COOL";
+      return "DULL";
+    }
+
+    function rankFromStats(stats) {
+      const values = Object.values(stats).map(v => gradeValues[v] || 0.5);
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      if (avg >= 0.95) return "S";
+      const index = Math.min(gradeOrder.length - 1, Math.max(0, Math.floor(avg * gradeOrder.length)));
+      const base = gradeOrder[index];
+      const fractional = avg * gradeOrder.length - index;
+      const suffix = fractional < 0.25 ? "-" : fractional > 0.75 ? "+" : "";
+      return `${base}${suffix}`.replace("F-", "F");
+    }
+
+    function drawRadar(stats) {
+      const ctx = el.radar.getContext("2d");
+      const size = el.radar.width;
+      const center = size / 2;
+      const radius = 56;
+      ctx.clearRect(0, 0, size, size);
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.fillStyle = "rgba(44,214,255,0.18)";
+      ctx.lineWidth = 1;
+
+      const axes = ["powers", "abilities", "inelegance", "speed", "strength"];
+      for (let ring = 1; ring <= 4; ring++) {
+        ctx.beginPath();
+        axes.forEach((axis, i) => {
+          const angle = -Math.PI / 2 + (Math.PI * 2 * i) / axes.length;
+          const x = center + Math.cos(angle) * radius * (ring / 4);
+          const y = center + Math.sin(angle) * radius * (ring / 4);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      axes.forEach((axis, i) => {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / axes.length;
+        const x = center + Math.cos(angle) * radius;
+        const y = center + Math.sin(angle) * radius;
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.fillStyle = "#dff5ff";
+        ctx.font = "10px sans-serif";
+        const label = axis[0].toUpperCase() + axis.slice(1, 4);
+        ctx.fillText(label, center + Math.cos(angle) * (radius + 8) - 12, center + Math.sin(angle) * (radius + 8));
+      });
+
+      ctx.beginPath();
+      axes.forEach((axis, i) => {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / axes.length;
+        const value = gradeValues[stats[axis]] || 0.5;
+        const x = center + Math.cos(angle) * radius * value;
+        const y = center + Math.sin(angle) * radius * value;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = "rgba(87, 229, 255, 0.26)";
+      ctx.strokeStyle = "#57e5ff";
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function playerSpriteMarkup(direction = state.playerDirection) {
+      return SPRITES.player[direction] || SPRITES.player.down;
+    }
+
+    function spriteMarkup(entity) {
+      const customSprite = SPRITES.creatures[entity.id]?.(128);
+      if (customSprite) return customSprite;
+      const { kind, primary, secondary } = entity.sprite;
+      if (kind === "lightning") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="url(#bg1)" />
+          <defs><linearGradient id="bg1" x1="0" x2="1"><stop stop-color="#09121f"/><stop offset="1" stop-color="#143f70"/></linearGradient></defs>
+          <circle cx="50" cy="50" r="28" fill="${secondary}" opacity="0.4"/>
+          <path d="M54 10 33 48h14L38 90 70 45H54l12-35Z" fill="${primary}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        </svg>`;
+      }
+      if (kind === "water") {
+        return SPRITES.creatures.waterSpirit?.(128) || `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#0a1d30" /><path d="M50 16C38 31 26 46 26 60c0 15 10 24 24 24s24-9 24-24c0-14-12-29-24-44Z" fill="${primary}" stroke="#dff5ff" stroke-width="2"/><circle cx="42" cy="49" r="4" fill="#fff" opacity="0.7"/></svg>`;
+      }
+      if (kind === "slime") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#0e1d1c" /><path d="M26 58c0-20 13-33 29-33s24 11 24 30c0 20-10 27-27 27S26 77 26 58Z" fill="${primary}" opacity="0.92"/><circle cx="44" cy="52" r="5" fill="#10291d"/><circle cx="60" cy="54" r="4" fill="#10291d"/><circle cx="58" cy="66" r="6" fill="${secondary}"/></svg>`;
+      }
+      if (kind === "sandman") {
+        return SPRITES.creatures.mrSandman?.(128);
+      }
+      if (kind === "walker") {
+        return SPRITES.creatures.frameWalker?.(128);
+      }
+      if (kind === "reaper") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#10161a" /><path d="M50 18c14 0 24 14 24 33 0 18-10 31-24 31S26 69 26 51c0-19 10-33 24-33Z" fill="${secondary}"/><path d="M24 78c12-7 40-9 54-1" stroke="${primary}" stroke-width="4" fill="none"/><path d="M69 18c8 0 11 10 3 15" stroke="#dff5ff" stroke-width="4" fill="none"/></svg>`;
+      }
+      if (kind === "watervoid") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#0d1125" /><circle cx="50" cy="50" r="28" fill="${secondary}" opacity="0.75"/><path d="M34 54c8-16 24-16 32 0" stroke="${primary}" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M28 66c11-8 33-8 44 0" stroke="#eaf6ff" stroke-width="3" fill="none" opacity="0.75"/></svg>`;
+      }
+      if (kind === "gugle") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#0a1a0d" /><path d="M20 58c0-18 15-28 33-28 16 0 28 8 28 23 0 22-18 29-35 29-12 0-26-8-26-24Z" fill="${primary}"/><circle cx="61" cy="50" r="5" fill="#001b05"/><path d="M17 63c16 7 28 11 50 9" stroke="${secondary}" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
+      }
+      if (kind === "frame") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#21180a" /><rect x="20" y="20" width="60" height="60" rx="8" fill="none" stroke="${primary}" stroke-width="4"/><rect x="30" y="30" width="40" height="40" rx="6" fill="${secondary}" opacity="0.7"/><path d="M28 49h44" stroke="#fff" stroke-width="3" stroke-dasharray="8 5"/></svg>`;
+      }
+      if (kind === "colossus") {
+        return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#11161d" /><path d="M20 78 40 22h20l20 56Z" fill="${secondary}"/><path d="M36 58h28" stroke="${primary}" stroke-width="5"/><path d="M50 18v18" stroke="#ffffff" stroke-width="4"/></svg>`;
+      }
+      return `<svg class="entity-svg pixelated" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#1a2236"/><circle cx="50" cy="50" r="28" fill="${primary}"/></svg>`;
+    }
+
+    function renderMap() {
+      el.mapGrid.innerHTML = "";
+      generatedMap.forEach((row, y) => {
+        row.forEach((cell, x) => {
+          const region = getRegionById(cell.regionId);
+          const tileType = TILE_TYPES[cell.tileType] || TILE_TYPES.grass;
+          const tile = document.createElement("button");
+          tile.className = `tile ${tileType.className} ${region.mood} ${tileType.glitch ? "tile-glitch" : ""} ${state.position.x === x && state.position.y === y ? "player" : ""}`;
+          tile.innerHTML = `<span class="tile-label">${region.short}</span>${state.position.x === x && state.position.y === y ? `<span class="tile-avatar">${playerSpriteMarkup()}</span>` : ""}`;
+          tile.addEventListener("click", () => {
+            if (x > state.position.x) state.playerDirection = "right";
+            else if (x < state.position.x) state.playerDirection = "left";
+            else if (y > state.position.y) state.playerDirection = "down";
+            else if (y < state.position.y) state.playerDirection = "up";
+            state.position = { x, y };
+            onMove();
+          });
+          el.mapGrid.appendChild(tile);
+        });
+      });
+      const region = currentRegion();
+      el.regionName.textContent = region.name;
+      el.regionDescription.textContent = region.description;
+      el.dangerChip.textContent = `Encounter Rate: ${region.danger}`;
+      el.playerRegionBadge.textContent = `Region: ${region.short}`;
+      el.objectiveText.textContent = state.objective || region.questHint;
+    }
+
+    function renderStats() {
+      const active = activeCreature();
+      const stats = active ? active.stats : { powers: "C", abilities: "C", inelegance: "C", speed: "C", strength: "C" };
+      el.playerRankBadge.textContent = `Base Rank: ${state.playerRank}`;
+      el.playerClanBadge.textContent = `Clan: ${state.clan}`;
+      el.generationChip.textContent = "Year System: 1919a -> 1919b every 5000 years";
+      document.getElementById("rank-summary").textContent = active
+        ? `${active.name} leads your team. Visible base rank ${state.playerRank} is derived from the pentagon while separate stat grades track raw affinity.`
+        : "Choose a starter to generate your initial base rank and pentagon.";
+      el.statBadges.innerHTML = [
+        `Powers ${stats.powers}`,
+        `Abilities ${stats.abilities}`,
+        `Inelegance ${stats.inelegance}`,
+        `Speed ${stats.speed}`,
+        `Strength ${stats.strength}`
+      ].map(item => `<span class="badge">${item}</span>`).join("");
+      drawRadar(stats);
+      el.styleFillMap.style.width = `${state.style}%`;
+      el.threatFill.style.width = `${state.threat}%`;
+    }
+
+    function renderTeam() {
+      el.teamList.innerHTML = "";
+      if (!state.team.length) {
+        el.teamList.innerHTML = `<div class="list-item"><strong>No creatures yet</strong><span class="tiny">Open the starter selection to begin your party of six.</span></div>`;
+        return;
+      }
+      state.team.forEach((member, index) => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        item.innerHTML = `
+          <strong>${index === state.activeIndex ? "★ " : ""}${member.name}</strong>
+          <div class="tiny">${member.family} • Rank ${member.rank} • HP ${member.currentHp}/${member.maxHp}</div>
+          <div class="tiny">${member.ability} / ${member.negative} / ${member.ultimate} / ${member.domain}</div>
+        `;
+        item.addEventListener("click", () => {
+          state.activeIndex = index;
+          state.playerRank = rankFromStats(member.stats);
+          renderAll();
+        });
+        el.teamList.appendChild(item);
+      });
+    }
+
+    function renderInventory() {
+      const items = [
+        [`Frame Catcher`, state.inventory.catchers, "Capture weakened entities."],
+        [`Ability Booster`, state.inventory.boosters, "Raises one lead stat after a major story beat."],
+        [`Frame Shard`, state.inventory.frameShards, "A rare fragment from Neydis frame experiments."],
+        [`Gugle Essence`, state.inventory.gugleEssence, "Recovered parasite residue used in risky fusion research."],
+        [`Ability Locker`, state.inventory.abilityLockers, "HRW/ROP tech that can suppress an encounter for one turn."]
+      ];
+      el.inventoryList.innerHTML = items.map(([name, count, text]) => `
+        <div class="list-item">
+          <strong>${name} × ${count}</strong>
+          <span class="tiny">${text}</span>
+        </div>
+      `).join("");
+      el.catcherCount.textContent = `Shards: ${state.inventory.frameShards} • Catchers: ${state.inventory.catchers}`;
+    }
+
+    function renderQuests() {
+      el.questList.innerHTML = state.quests.map((quest, i) => `
+        <div class="list-item">
+          <strong>${quest.done ? "✓" : "•"} ${quest.title}</strong>
+          <span class="tiny">${quest.text}</span>
+        </div>
+      `).join("");
+      const beat = storyBeats[Math.min(state.currentStoryIndex, storyBeats.length - 1)];
+      if (beat) {
+        el.cutsceneTitle.textContent = beat.title;
+        el.cutsceneText.textContent = beat.text;
+      }
+    }
+
+    function renderEvents() {
+      el.eventList.innerHTML = state.events.map(event => `<div class="list-item"><span class="tiny">${event}</span></div>`).join("");
+    }
+
+    function prepareBattleUI() {
+      const player = activeCreature();
+      const battle = state.battle;
+      if (!player || !battle) return;
+      const enemy = battle.enemy;
+      el.enemyName.textContent = enemy.name;
+      el.enemyRank.textContent = enemy.rank;
+      el.enemyOrigin.textContent = `Origin: ${enemy.origin}`;
+      el.enemyHpBar.style.width = `${Math.max(0, (enemy.currentHp / enemy.maxHp) * 100)}%`;
+      el.enemyHpText.textContent = `${enemy.currentHp} / ${enemy.maxHp} HP`;
+      el.enemySprite.innerHTML = `${spriteMarkup(enemy)}<div class="capture-layer" id="capture-layer" aria-hidden="true"><div class="capture-shard"></div><div class="capture-flash"></div></div>`;
+      el.captureLayer = document.getElementById("capture-layer");
+      el.captureLayer.classList.remove("active");
+      el.enemySprite.classList.remove("animating", "shrink", "fade", "capture-fail");
+
+      el.playerCreatureName.textContent = player.name;
+      el.playerCreatureRank.textContent = player.rank;
+      el.playerCreatureType.textContent = `${player.family} / ${player.role}`;
+      el.playerHpBar.style.width = `${Math.max(0, (player.currentHp / player.maxHp) * 100)}%`;
+      el.playerHpText.textContent = `${player.currentHp} / ${player.maxHp} HP`;
+      el.playerSprite.innerHTML = spriteMarkup(player);
+
+      el.basicName.textContent = player.moves.basic.label;
+      el.basicDesc.textContent = player.moves.basic.text;
+      el.negativeName.textContent = player.moves.negative.label;
+      el.negativeDesc.textContent = player.moves.negative.text;
+      el.ultimateName.textContent = player.moves.ultimate.label;
+      el.ultimateDesc.textContent = player.moves.ultimate.text;
+      el.domainName.textContent = player.moves.domain.label;
+      el.domainDesc.textContent = player.moves.domain.text;
+      el.styleFill.style.width = `${state.style}%`;
+      el.styleGrade.textContent = state.styleGrade;
+      el.styleText.textContent = `Style bonus currently at ${state.style}% — ${state.styleGrade}.`;
+      el.captureTip.textContent = enemy.currentHp <= enemy.maxHp * 0.35 ? "Capture chance boosted — target is weakened." : "Weaken the target below 35% HP for best odds.";
+    }
+
+    function renderBattleLog() {
+      el.battleLog.innerHTML = (state.battle?.log || []).map(line => `<p>${line}</p>`).join("");
+    }
+
+    function renderBattle() {
+      if (state.battle) {
+        el.explorationView.classList.remove("active");
+        el.battleView.classList.add("active");
+        prepareBattleUI();
+        renderBattleLog();
+      } else {
+        el.battleView.classList.remove("active");
+        el.explorationView.classList.add("active");
+      }
+    }
+
+    function draw() {
+        renderMap();
+      renderStats();
+      renderTeam();
+      renderInventory();
+      renderQuests();
+      renderEvents();
+      renderBattle();
+    }
+
+    const renderAll = draw;
+
+    function movePlayer(dx, dy) {
+      const nx = Math.max(0, Math.min(generatedMap[0].length - 1, state.position.x + dx));
+      const ny = Math.max(0, Math.min(generatedMap.length - 1, state.position.y + dy));
+      if (dx > 0) state.playerDirection = "right";
+      if (dx < 0) state.playerDirection = "left";
+      if (dy > 0) state.playerDirection = "down";
+      if (dy < 0) state.playerDirection = "up";
+      if (nx === state.position.x && ny === state.position.y) return;
+      state.position = { x: nx, y: ny };
+      onMove();
+    }
+
+    function onMove() {
+      const region = currentRegion();
+      updateObjective(region.questHint);
+      state.threat = Math.min(100, Math.max(8, state.threat + (region.id === "inbetween" ? 6 : region.id === "neydis" ? 4 : 1)));
+      addEvent(`You moved into ${region.short}. ${region.description}`);
+      renderAll();
+      if (state.starterChosen && Math.random() < region.encounterRate * 0.35) {
+        startEncounter();
+      }
+    }
+
+    function chooseEncounter(region) {
+      const pool = region.encounterTable.map(id => creatures[id]);
+      const weighted = [];
+      const voidPriority = new Set(["mrSandman", "frameWalker", "ledgerWarden", "silentTime"]);
+      pool.forEach(entity => {
+        let repeats = entity.rarity.includes("S") ? 1 : entity.rarity.startsWith("A") ? 2 : 3;
+        if (region.id === "inbetween" && voidPriority.has(entity.id)) repeats += 3;
+        for (let i = 0; i < repeats; i++) weighted.push(entity.id);
+      });
+      const chosenId = weighted[Math.floor(Math.random() * weighted.length)];
+      return cloneCreature(chosenId);
+    }
+
+    function startEncounter(manual = true) {
+      if (!state.team.length) {
+        openStarterModal();
+        return;
+      }
+      const region = currentRegion();
+      const enemy = chooseEncounter(region);
+      enemy.currentHp = enemy.maxHp;
+      state.battle = {
+        enemy,
+        log: [
+          `A wild ${enemy.name} emerged in ${region.short}!`,
+          `${enemy.description}`,
+          `Lore hook: ${region.questHint}`
+        ],
+        domainActive: false,
+        enemyLocked: false,
+        turn: 1
+      };
+      state.encountered.push(enemy.id);
+      state.encountered = [...new Set(state.encountered)];
+      addEvent(`${enemy.name} appeared in ${region.short}.`);
+      if (manual) state.style = Math.max(0, state.style - 4);
+      state.styleGrade = styleLabel(state.style);
+      renderAll();
+    }
+
+    function appendBattleLog(text) {
+      if (!state.battle) return;
+      state.battle.log.unshift(text);
+      state.battle.log = state.battle.log.slice(0, 8);
+      renderBattleLog();
+    }
+
+    function updateStyle(delta) {
+      state.style = Math.max(0, Math.min(100, state.style + delta));
+      state.styleGrade = styleLabel(state.style);
+      el.styleFill.style.width = `${state.style}%`;
+      el.styleFillMap.style.width = `${state.style}%`;
+      el.styleGrade.textContent = state.styleGrade;
+      el.styleText.textContent = `Style bonus currently at ${state.style}% — ${state.styleGrade}.`;
+    }
+
+    function enemyTurn() {
+      if (!state.battle) return;
+      const player = activeCreature();
+      const enemy = state.battle.enemy;
+      if (!player || enemy.currentHp <= 0) return;
+      const enemyMoveKeys = ["basic", "negative", "ultimate"];
+      const moveKey = enemyMoveKeys[Math.floor(Math.random() * enemyMoveKeys.length)];
+      const move = enemy.moves[moveKey];
+      let damage = move.damage + Math.floor(Math.random() * 6);
+      if (state.battle.enemyLocked) {
+        damage = Math.max(0, damage - 8);
+        state.battle.enemyLocked = false;
+        appendBattleLog("The ability locker effect suppresses some of the enemy's power.");
+      }
+      player.currentHp = Math.max(0, player.currentHp - damage);
+      appendBattleLog(`${enemy.name} used ${move.label} for ${damage} damage.`);
+      if (player.currentHp <= 0) {
+        appendBattleLog(`${player.name} fell. Emergency recall returns you to exploration.`);
+        player.currentHp = Math.max(1, Math.round(player.maxHp * 0.35));
+        state.battle = null;
+        state.style = Math.max(0, state.style - 18);
+        state.styleGrade = styleLabel(state.style);
+        state.threat = Math.min(100, state.threat + 6);
+        addEvent(`You retreated after ${enemy.name} overwhelmed your lead creature.`);
+        renderAll();
+        return;
+      }
+      renderAll();
+    }
+
+    function playerMove(moveKey) {
+      if (!state.battle) return;
+      const player = activeCreature();
+      const enemy = state.battle.enemy;
+      const move = player.moves[moveKey];
+      let damage = move.damage + Math.floor(state.style / 20);
+      if (move.exhaust && player.exhausted) damage = Math.max(8, Math.floor(damage * 0.55));
+      if (state.battle.domainActive && move.domain) damage += 6;
+      enemy.currentHp = Math.max(0, enemy.currentHp - damage);
+      appendBattleLog(`${player.name} used ${move.label} and dealt ${damage} damage.`);
+      updateStyle(move.style);
+      if (move.heal) {
+        player.currentHp = Math.min(player.maxHp, player.currentHp + move.heal);
+        appendBattleLog(`${player.name} recovered ${move.heal} HP.`);
+      }
+      if (move.domain) {
+        state.battle.domainActive = true;
+        appendBattleLog(`Domain Expansion: ${move.label}. Contact rules and certainty bend in your favor.`);
+      }
+      if (moveKey === "negative" && state.inventory.abilityLockers > 0) {
+        state.battle.enemyLocked = true;
+      }
+      if (move.exhaust) player.exhausted = true;
+
+      if (enemy.currentHp <= 0) {
+        enemy.currentHp = 0;
+        appendBattleLog(`${enemy.name} was defeated.`);
+        completeBattle(false);
+        return;
+      }
+      renderAll();
+      setTimeout(enemyTurn, 350);
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function captureChance(enemy) {
+      const hpFactor = 1 - enemy.currentHp / enemy.maxHp;
+      return Math.min(0.95, enemy.captureRate + hpFactor * 0.6 + state.style / 280);
+    }
+
+    async function triggerCaptureAnimation(creatureId) {
+      if (!state.battle) return false;
+      const enemy = state.battle.enemy;
+      const successChance = captureChance(enemy);
+      const success = Math.random() < successChance;
+      appendBattleLog(`Frame Shard launched toward ${enemy.name}.`);
+      el.captureLayer.classList.remove("active");
+      el.enemySprite.classList.remove("animating", "shrink", "fade", "capture-fail");
+      void el.captureLayer.offsetWidth;
+      el.captureLayer.classList.add("active");
+      el.enemySprite.classList.add("animating", "fade");
+      await wait(240);
+      el.enemySprite.classList.add("shrink");
+      await wait(520);
+      if (!success) {
+        el.enemySprite.classList.remove("animating", "shrink", "fade");
+        el.enemySprite.classList.add("capture-fail");
+        el.captureLayer.classList.remove("active");
+        await wait(320);
+        el.enemySprite.classList.remove("capture-fail");
+      }
+      el.enemySprite.classList.remove("animating");
+      appendBattleLog(success
+        ? `${creatureId} collapsed into the shard in a white flash.`
+        : `${creatureId} resisted the shard and broke back into the battlefield.`);
+      return success;
+    }
+
+    function completeBattle(captured) {
+      const enemy = state.battle?.enemy;
+      const region = currentRegion();
+      if (!enemy) return;
+      if (captured && state.team.length < 6) {
+        enemy.currentHp = enemy.maxHp;
+        state.team.push(enemy);
+        addEvent(`${enemy.name} was captured and added to your team.`);
+        updateObjective(`Captured ${enemy.name}. Explore ${region.short} for the next lead on the Gugles.`);
+      } else if (captured) {
+        addEvent(`${enemy.name} was captured, but your team is full. It was logged to the codex instead.`);
+      } else {
+        state.inventory.frameShards += enemy.family === "Frame" ? 1 : 0;
+        state.inventory.gugleEssence += enemy.family === "Gugles" ? 1 : 0;
+        addEvent(`${enemy.name} was defeated in ${region.short}.`);
+      }
+      state.style = Math.min(100, state.style + 10);
+      state.styleGrade = styleLabel(state.style);
+      state.battle = null;
+      const quest = state.quests[1];
+      if (quest && region.id === "inbetween") quest.done = true;
+      renderAll();
+    }
+
+    async function tryCapture() {
+      if (!state.battle || (state.inventory.frameShards <= 0 && state.inventory.catchers <= 0)) return;
+      const enemy = state.battle.enemy;
+      const usedItem = state.inventory.frameShards > 0 ? "Frame Shard" : "Frame Catcher";
+      if (usedItem === "Frame Shard") state.inventory.frameShards -= 1;
+      else state.inventory.catchers -= 1;
+      const chance = captureChance(enemy);
+      appendBattleLog(`You used a ${usedItem}. Capture chance ${Math.round(chance * 100)}%.`);
+      renderInventory();
+      const success = await triggerCaptureAnimation(enemy.name);
+      if (success) {
+        appendBattleLog(`${enemy.name} was sealed inside the shard lattice!`);
+        completeBattle(true);
+      } else {
+        appendBattleLog(`${enemy.name} broke free.`);
+        draw();
+        setTimeout(enemyTurn, 300);
+      }
+    }
+
+    function applyBooster() {
+      const lead = activeCreature();
+      if (!lead || state.inventory.boosters <= 0) return;
+      state.inventory.boosters -= 1;
+      lead.stats.powers = "A";
+      lead.stats.speed = lead.stats.speed === "B" ? "B+" : lead.stats.speed;
+      lead.rank = rankFromStats(lead.stats);
+      state.playerRank = lead.rank;
+      addEvent(`${lead.name} absorbed an Ability Booster and surged to rank ${lead.rank}.`);
+      renderAll();
+    }
+
+    function cycleLead() {
+      if (state.team.length <= 1) return;
+      state.activeIndex = (state.activeIndex + 1) % state.team.length;
+      state.playerRank = rankFromStats(activeCreature().stats);
+      addEvent(`${activeCreature().name} moved to the front of the party.`);
+      renderAll();
+    }
+
+    function playStoryBeat() {
+      const beat = storyBeats[state.currentStoryIndex % storyBeats.length];
+      el.cutsceneTitle.textContent = beat.title;
+      el.cutsceneText.textContent = beat.text;
+      state.currentStoryIndex += 1;
+      if (beat.reward.frameShards) state.inventory.frameShards += beat.reward.frameShards;
+      if (beat.reward.boosters) state.inventory.boosters += beat.reward.boosters;
+      if (beat.reward.catchers) state.inventory.catchers += beat.reward.catchers;
+      if (beat.reward.essence) state.inventory.gugleEssence += beat.reward.essence;
+      if (beat.reward.shards) state.inventory.frameShards += beat.reward.shards;
+      addEvent(beat.event);
+      if (state.currentStoryIndex >= 1) state.quests[0].done = true;
+      if (state.currentStoryIndex >= 3) state.quests[2].done = true;
+      renderAll();
+    }
+
+    function openModal(title, bodyHtml) {
+      el.modalTitle.textContent = title;
+      el.modalBody.innerHTML = bodyHtml;
+      el.modal.classList.add("open");
+      el.modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      el.modal.classList.remove("open");
+      el.modal.setAttribute("aria-hidden", "true");
+    }
+
+    function openStarterModal() {
+      const starterIds = ["lightningBeast", "waterSpirit", "slimeCore"];
+      openModal("Choose a Starter", `
+        <p style="color:var(--muted); line-height:1.5;">Select the creature that will anchor your first team. Each starter reflects a major thread from the lore: elemental mastery, water-domain technique, or Flint slime inheritance.</p>
+        <div class="starter-grid">
+          ${starterIds.map(id => {
+            const c = creatures[id];
+            return `
+              <button class="starter-btn" data-starter="${id}">
+                <strong>${c.name}</strong>
+                <div class="tiny" style="margin:8px 0;">${c.description}</div>
+                <div class="tiny">Rank ${c.rank} • ${c.ability} • ${c.domain}</div>
+              </button>
+            `;
+          }).join("")}
+        </div>
+      `);
+      document.querySelectorAll("[data-starter]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const starter = cloneCreature(btn.dataset.starter);
+          state.team = [starter];
+          state.activeIndex = 0;
+          state.playerRank = rankFromStats(starter.stats);
+          state.clan = starter.family;
+          state.starterChosen = true;
+          state.quests[0].done = true;
+          addEvent(`Starter chosen: ${starter.name} of the ${starter.family}.`);
+          updateObjective("Travel the world, build a team of six, and uncover the spread of the Gugles.");
+          closeModal();
+          renderAll();
+        });
+      });
+    }
+
+    function openCodexModal() {
+      openModal("Lore Codex", `
+        <p style="color:var(--muted); line-height:1.6;">This prototype folds the pasted lore into a playable codex: the Adam-and-Eve origin, the 5000-year reset calendar, ACOTW science history, HRW and ROP anti-ability technology, Gugle parasitism, clans, and the Fractured Frames monsters.</p>
+        <div class="codex-grid">
+          ${loreEntries.map(entry => `
+            <div class="list-item">
+              <strong>${entry.title}</strong>
+              <span class="tiny">${entry.text}</span>
+            </div>
+          `).join("")}
+        </div>
+      `);
+    }
+
+    function saveGame() {
+      localStorage.setItem("abilities-world-save", JSON.stringify(state));
+      addEvent("Game saved to local storage.");
+      renderAll();
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem("abilities-world-save");
+      if (!raw) {
+        addEvent("No save file found. Starter selection reopened.");
+        openStarterModal();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        state = { ...defaultState(), ...parsed };
+        addEvent("Save data loaded from local storage.");
+        renderAll();
+      } catch {
+        addEvent("Save data was corrupted and could not be loaded.");
+      }
+    }
+
+    document.getElementById("search-btn").addEventListener("click", () => startEncounter(true));
+    document.getElementById("capture-btn").addEventListener("click", tryCapture);
+    document.querySelectorAll(".move-btn").forEach(btn => btn.addEventListener("click", () => playerMove(btn.dataset.move)));
+    document.getElementById("swap-btn").addEventListener("click", cycleLead);
+    document.getElementById("story-btn").addEventListener("click", playStoryBeat);
+    document.getElementById("save-btn").addEventListener("click", saveGame);
+    document.getElementById("load-btn").addEventListener("click", loadGame);
+    document.getElementById("codex-btn").addEventListener("click", openCodexModal);
+    document.getElementById("close-modal-btn").addEventListener("click", closeModal);
+    document.getElementById("modal").addEventListener("click", (event) => {
+      if (event.target === el.modal) closeModal();
+    });
+    document.querySelectorAll(".dir-btn[data-dir]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dir = btn.dataset.dir;
+        if (dir === "up") movePlayer(0, -1);
+        if (dir === "down") movePlayer(0, 1);
+        if (dir === "left") movePlayer(-1, 0);
+        if (dir === "right") movePlayer(1, 0);
+      });
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (el.modal.classList.contains("open") && event.key === "Escape") {
+        closeModal();
+        return;
+      }
+      if (state.battle) return;
+      if (["ArrowUp", "w", "W"].includes(event.key)) movePlayer(0, -1);
+      if (["ArrowDown", "s", "S"].includes(event.key)) movePlayer(0, 1);
+      if (["ArrowLeft", "a", "A"].includes(event.key)) movePlayer(-1, 0);
+      if (["ArrowRight", "d", "D"].includes(event.key)) movePlayer(1, 0);
+      if (event.key.toLowerCase() === "e") startEncounter(true);
+      if (event.key.toLowerCase() === "b") applyBooster();
+    });
+
+    renderAll();
+    openStarterModal();
+  </script>
+</body>
+</html>
