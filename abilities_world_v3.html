@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Abilities World v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cyan:#00ffff;--magenta:#ff00ff;--gold:#ffd700;--orange:#ff6600;
+  --red:#ff2244;--green:#00ff88;--purple:#8800ff;--blue:#0066ff;
+  --dark:#050510;--panel:rgba(0,10,30,0.94);--white:#e8f0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+body{font-family:'Share Tech Mono',monospace;color:#fff;touch-action:none;}
+#game{width:100%;height:100%;position:relative;overflow:hidden;background:var(--dark);}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.active{display:flex;}
+
+/* ── TITLE ── */
+#title-screen{background:radial-gradient(ellipse at 50% 30%,#0a0030 0%,#000008 70%);}
+#title-screen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%2300ffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
+.title-logo{font-family:'Orbitron',monospace;font-size:clamp(26px,6.5vw,52px);font-weight:900;text-align:center;letter-spacing:4px;line-height:1.1;margin-bottom:6px;position:relative;z-index:1;}
+.title-logo .line1{color:var(--cyan);text-shadow:0 0 24px var(--cyan),0 0 48px var(--cyan);}
+.title-logo .line2{color:var(--magenta);text-shadow:0 0 24px var(--magenta);font-size:.5em;letter-spacing:8px;}
+.title-ver{color:#446;font-size:9px;letter-spacing:3px;text-align:center;position:relative;z-index:1;}
+.title-sub{color:#aaf;font-size:11px;letter-spacing:2px;margin:8px 0 20px;text-align:center;position:relative;z-index:1;}
+.clan-select{display:flex;flex-direction:column;gap:6px;width:min(360px,90vw);position:relative;z-index:1;}
+.clan-select h3{font-family:'Orbitron',monospace;color:var(--gold);text-align:center;font-size:12px;letter-spacing:3px;margin-bottom:6px;}
+.clan-btn{padding:10px 14px;background:rgba(0,255,255,0.04);border:1px solid rgba(0,255,255,0.18);color:#cce;font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;border-radius:4px;transition:all .2s;text-align:left;display:flex;align-items:center;gap:10px;}
+.clan-btn:hover,.clan-btn.selected{background:rgba(0,255,255,0.12);border-color:var(--cyan);color:#fff;transform:translateX(3px);}
+.clan-icon{font-size:18px;width:26px;text-align:center;}
+.clan-info{flex:1;}
+.clan-name{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--cyan);}
+.clan-desc{font-size:9px;color:#778;margin-top:2px;}
+.start-btn{margin-top:12px;padding:13px;background:linear-gradient(135deg,#00ffff1a,#ff00ff1a);border:2px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:4px;cursor:pointer;border-radius:6px;transition:all .3s;text-align:center;position:relative;z-index:1;}
+.start-btn:hover{background:linear-gradient(135deg,#00ffff33,#ff00ff33);box-shadow:0 0 20px var(--cyan);}
+.title-lore{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:8px;color:#224;letter-spacing:2px;text-align:center;z-index:1;}
+
+/* ── EXPLORE ── */
+#explore-screen{padding:0;background:#000;}
+#explore-canvas{display:block;width:100%;height:100%;}
+.explore-hud{position:absolute;top:0;left:0;right:0;pointer-events:none;padding:7px 10px;}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+.hud-region{font-family:'Orbitron',monospace;font-size:9px;color:var(--cyan);background:var(--panel);padding:4px 8px;border:1px solid rgba(0,255,255,.2);border-radius:3px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hud-player{background:var(--panel);border:1px solid rgba(255,255,255,.07);padding:4px 8px;border-radius:3px;font-size:9px;text-align:right;}
+.hud-rank{color:var(--gold);font-family:'Orbitron',monospace;font-weight:700;}
+.hud-meta{color:#667;font-size:8px;margin-top:1px;}
+.hud-catchers{color:var(--cyan);font-size:8px;}
+/* mini-hp bars for team */
+.hud-team{display:flex;gap:3px;margin-top:4px;pointer-events:none;}
+.hud-team-slot{width:22px;height:4px;background:#111;border-radius:2px;overflow:hidden;}
+.hud-team-fill{height:100%;background:var(--green);border-radius:2px;}
+.hud-team-fill.low{background:var(--red);}
+
+/* D-PAD */
+.dpad{position:absolute;bottom:20px;left:20px;width:116px;height:116px;pointer-events:auto;}
+.dpad-btn{position:absolute;width:34px;height:34px;background:rgba(0,255,255,0.07);border:1px solid rgba(0,255,255,0.28);color:var(--cyan);border-radius:4px;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;}
+.dpad-btn:active,.dpad-btn.pressed{background:rgba(0,255,255,0.24);}
+.dpad-up{top:0;left:41px;}.dpad-down{bottom:0;left:41px;}.dpad-left{top:41px;left:0;}.dpad-right{top:41px;right:0;}.dpad-center{top:41px;left:41px;font-size:9px;color:#445;}
+.action-btns{position:absolute;bottom:20px;right:12px;display:flex;flex-direction:column;gap:6px;pointer-events:auto;}
+.act-btn{padding:8px 12px;background:var(--panel);border:1px solid rgba(255,255,255,.12);color:#bbc;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;border-radius:4px;text-align:center;min-width:76px;}
+.act-btn:hover,.act-btn:active{background:rgba(0,255,255,.1);border-color:var(--cyan);color:#fff;}
+
+/* MESSAGE BOX */
+#msg-box{position:absolute;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid rgba(0,255,255,.28);padding:8px 14px;font-size:11px;color:#aef;display:none;pointer-events:none;min-height:44px;}
+#msg-box.visible{display:block;}
+#msg-title{font-family:'Orbitron',monospace;font-size:8px;color:var(--cyan);letter-spacing:2px;margin-bottom:2px;}
+
+/* ── BATTLE SCREEN ── */
+#battle-screen{background:radial-gradient(ellipse at 50% 0%,#1a002a 0%,#060010 60%);padding:0;justify-content:flex-start;}
+.battle-bg{position:absolute;inset:0;overflow:hidden;}
+.battle-bg::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(0,255,255,.012) 40px,rgba(0,255,255,.012) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(0,255,255,.012) 40px,rgba(0,255,255,.012) 41px);}
+.battle-arena{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;height:100%;padding:8px 10px 6px;}
+
+/* Status badges */
+.status-badge{display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;margin-left:4px;font-family:'Orbitron',monospace;font-weight:700;}
+.status-stun{background:#ff990033;border:1px solid #ff9900;color:#ff9900;}
+.status-drain{background:#ff224433;border:1px solid #ff2244;color:#ff2244;}
+.status-lock{background:#88008833;border:1px solid #cc00ff;color:#cc00ff;}
+
+/* Enemy info */
+.enemy-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.battle-info-box{background:rgba(0,0,20,0.88);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:7px 9px;flex:1;}
+.battle-info-box.enemy{margin-right:10px;}
+.battle-info-box.player{margin-left:10px;}
+.bib-name{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#fff;}
+.bib-rank{font-size:9px;color:var(--gold);float:right;}
+.bib-level{font-size:8px;color:#556;float:right;margin-right:4px;}
+.hp-row{display:flex;align-items:center;gap:5px;margin-top:5px;}
+.hp-label{font-size:8px;color:#55a;width:16px;}
+.hp-bar{flex:1;height:7px;background:#0a0a1a;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.07);}
+.hp-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+.hp-fill.enemy{background:linear-gradient(90deg,#ff2244,#ff6600);}
+.hp-fill.player{background:linear-gradient(90deg,#00ff88,#00ffff);}
+.hp-fill.low{background:linear-gradient(90deg,#ff4400,#ff2200);}
+.hp-text{font-size:8px;color:#778;width:58px;text-align:right;}
+.bib-type{font-size:8px;color:#556;margin-top:2px;}
+.bib-status{margin-top:3px;min-height:14px;}
+
+/* Battle catchers counter */
+.battle-catchers{font-size:8px;color:var(--cyan);text-align:right;margin-top:2px;}
+
+/* Sprites */
+.sprite-zone{display:flex;justify-content:space-between;align-items:flex-end;margin:0 6px 2px;}
+.enemy-sprite-wrap{width:clamp(76px,21vw,108px);height:clamp(76px,21vw,108px);display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.player-sprite-wrap{width:clamp(66px,19vw,92px);height:clamp(66px,19vw,92px);display:flex;align-items:center;justify-content:center;filter:hue-rotate(180deg);transition:transform .15s;}
+.sprite-shake{animation:sprite-shake .3s ease;}
+@keyframes sprite-shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}50%{transform:translateX(-3px);}}
+.sprite-flash{animation:sprite-flash .25s ease;}
+@keyframes sprite-flash{0%,100%{filter:hue-rotate(180deg) brightness(1);}50%{filter:hue-rotate(180deg) brightness(4) saturate(0);}}
+
+/* XP bar */
+.xp-row{display:flex;align-items:center;gap:5px;margin-top:3px;}
+.xp-label{font-size:7px;color:#446;width:16px;}
+.xp-bar{flex:1;height:3px;background:#0a0a14;border-radius:2px;overflow:hidden;}
+.xp-fill{height:100%;background:linear-gradient(90deg,#6600ff,#ff00ff);border-radius:2px;transition:width .5s ease;}
+
+/* Style meter */
+.style-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;padding:0 2px;}
+.style-label{font-family:'Orbitron',monospace;font-size:7px;color:var(--magenta);letter-spacing:2px;width:40px;}
+.style-bar{flex:1;height:5px;background:#0a0a14;border-radius:3px;overflow:hidden;border:1px solid rgba(255,0,255,.25);}
+.style-fill{height:100%;background:linear-gradient(90deg,var(--magenta),var(--cyan));border-radius:3px;transition:width .3s;}
+.style-pct{font-size:8px;color:var(--magenta);width:28px;text-align:right;}
+.style-rank-badge{font-family:'Orbitron',monospace;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;}
+
+/* Combat log */
+#combat-log{background:rgba(0,0,20,0.82);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:5px 8px;font-size:10px;color:#aef;min-height:52px;max-height:68px;overflow:hidden;margin-bottom:5px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;}
+.log-line{display:block;line-height:1.4;transition:opacity .3s;}
+.log-line.old{opacity:.45;font-size:9px;}
+.log-line.highlight{color:var(--gold);}
+.log-line.domain{color:var(--magenta);}
+.log-line.danger{color:var(--red);}
+.log-line.status{color:#ff9900;}
+
+/* Move buttons */
+.move-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.move-btn{padding:9px 7px;border:none;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;cursor:pointer;transition:all .15s;text-align:left;line-height:1.3;position:relative;overflow:hidden;}
+.move-btn:active:not(.disabled):not(.used){transform:scale(0.96);}
+.move-btn .mv-name{display:block;font-size:10px;}
+.move-btn .mv-type{display:block;font-size:8px;opacity:.6;margin-top:1px;}
+.move-btn.basic{background:linear-gradient(135deg,#1a2a4a,#0a1828);border:1px solid #246;color:#adf;}
+.move-btn.negative{background:linear-gradient(135deg,#2a1a2a,#18081a);border:1px solid #536;color:#daf;}
+.move-btn.ultimate{background:linear-gradient(135deg,#3a2000,#180e00);border:1px solid #a50;color:#fda;}
+.move-btn.domain{grid-column:1/-1;background:linear-gradient(135deg,#1a0044,#40000e);border:2px solid var(--magenta);color:#fff;text-align:center;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:10px;}
+.move-btn.used,.move-btn.disabled{opacity:.38;cursor:not-allowed;pointer-events:none;}
+.move-btn.basic:hover:not(.disabled){background:linear-gradient(135deg,#2a3a5a,#1a2838);border-color:#48a;}
+.move-btn.negative:hover:not(.disabled){background:linear-gradient(135deg,#3a2a3a,#28182a);border-color:#848;}
+.move-btn.ultimate:hover:not(.disabled){background:linear-gradient(135deg,#4a3010,#281800);border-color:#c60;}
+.move-btn.domain:hover:not(.used):not(.disabled){box-shadow:0 0 12px var(--magenta);}
+.battle-actions-row{display:flex;gap:5px;margin-top:5px;}
+.battle-sub-btn{flex:1;padding:7px 4px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.14);color:#778;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;border-radius:4px;text-align:center;transition:all .2s;}
+.battle-sub-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.battle-sub-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ── OVERLAYS ── */
+.overlay{position:absolute;inset:0;background:rgba(0,0,10,0.97);display:none;flex-direction:column;z-index:100;padding:14px;overflow-y:auto;}
+.overlay.active{display:flex;}
+.overlay-title{font-family:'Orbitron',monospace;font-size:13px;color:var(--cyan);letter-spacing:3px;margin-bottom:14px;text-align:center;border-bottom:1px solid rgba(0,255,255,.2);padding-bottom:8px;}
+.close-btn{position:absolute;top:10px;right:14px;background:none;border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:3px 8px;cursor:pointer;border-radius:3px;}
+.close-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* Team */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.team-slot{background:rgba(0,255,255,.04);border:1px solid rgba(0,255,255,.14);border-radius:6px;padding:9px;min-height:90px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.team-slot.empty{border-style:dashed;opacity:.35;cursor:default;}
+.team-slot:not(.empty):hover{background:rgba(0,255,255,.1);border-color:var(--cyan);}
+.team-slot.active-lead{border-color:var(--gold);background:rgba(255,215,0,.06);}
+.team-slot.fainted{opacity:.5;filter:grayscale(.7);}
+.ts-sprite{width:48px;height:48px;}
+.ts-name{font-family:'Orbitron',monospace;font-size:8px;color:#fff;text-align:center;}
+.ts-rank{font-size:8px;color:var(--gold);}
+.ts-hp{font-size:8px;color:var(--green);width:100%;}
+.ts-hp-bar{width:100%;height:3px;background:#111;border-radius:2px;overflow:hidden;margin-top:2px;}
+.ts-hp-fill{height:100%;background:var(--green);border-radius:2px;}
+.ts-xp-bar{width:100%;height:2px;background:#0a0a18;border-radius:1px;overflow:hidden;margin-top:1px;}
+.ts-xp-fill{height:100%;background:var(--purple);border-radius:1px;}
+.ts-level{font-size:7px;color:#446;}
+
+/* Dex */
+.dex-list{display:flex;flex-direction:column;gap:5px;}
+.dex-entry{display:flex;align-items:center;gap:8px;background:rgba(0,255,255,.03);border:1px solid rgba(0,255,255,.08);border-radius:5px;padding:7px 9px;cursor:pointer;}
+.dex-entry.caught{border-color:rgba(0,255,255,.4);}
+.dex-entry:hover{background:rgba(0,255,255,.07);}
+.dex-sprite{width:38px;height:38px;flex-shrink:0;}
+.dex-info{flex:1;}
+.dex-name{font-family:'Orbitron',monospace;font-size:9px;color:#fff;}
+.dex-sub{font-size:8px;color:#556;margin-top:2px;}
+.dex-rank-badge{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;}
+.rank-S{color:#ff00ff;border:1px solid #ff00ff;background:rgba(255,0,255,.1);}
+.rank-A{color:#ffd700;border:1px solid #ffd700;background:rgba(255,215,0,.1);}
+.rank-B{color:#00ffff;border:1px solid #00ffff;background:rgba(0,255,255,.1);}
+.rank-C{color:#00ff88;border:1px solid #00ff88;background:rgba(0,255,136,.1);}
+.rank-D{color:#aaa;border:1px solid #aaa;background:rgba(170,170,170,.1);}
+.rank-F{color:#555;border:1px solid #555;background:rgba(80,80,80,.1);}
+.dex-detail{background:rgba(0,0,20,.92);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:10px;margin-top:6px;display:none;}
+.dex-detail.open{display:block;}
+.dd-lore{font-size:9px;color:#88a;line-height:1.65;margin:6px 0;}
+.dd-moves{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:6px;}
+.dd-move{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:3px;padding:3px 5px;}
+.dd-move-name{color:#adf;display:block;font-size:8px;}
+.dd-move-desc{color:#445;display:block;font-size:7px;margin-top:1px;}
+.dd-stats{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.dd-stat{background:rgba(0,255,255,.05);border:1px solid rgba(0,255,255,.15);border-radius:3px;padding:2px 5px;font-size:8px;color:var(--cyan);}
+
+/* Capture screen */
+#capture-screen{background:radial-gradient(ellipse at 50% 50%,#001a3a 0%,#000a14 70%);padding:0;align-items:stretch;}
+.capture-inner{width:100%;max-width:520px;margin:auto;padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.capture-title{font-family:'Orbitron',monospace;font-size:17px;color:var(--cyan);text-align:center;text-shadow:0 0 20px var(--cyan);}
+.capture-sub{font-size:10px;color:#558;letter-spacing:2px;text-align:center;}
+.capture-ball{width:56px;height:56px;background:conic-gradient(var(--cyan) 0deg,var(--magenta) 120deg,var(--cyan) 240deg,var(--gold) 360deg);border-radius:50%;animation:spin-slow 2s linear infinite;box-shadow:0 0 28px var(--cyan);}
+@keyframes spin-slow{to{transform:rotate(360deg);}}
+.capture-result{font-family:'Orbitron',monospace;font-size:18px;text-align:center;font-weight:900;letter-spacing:3px;}
+.capture-result.success{color:var(--gold);text-shadow:0 0 20px var(--gold);}
+.capture-result.fail{color:var(--red);text-shadow:0 0 20px var(--red);}
+.capture-btn{padding:12px 28px;background:linear-gradient(135deg,rgba(0,255,255,.14),rgba(255,0,255,.14));border:2px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',monospace;font-size:12px;letter-spacing:3px;cursor:pointer;border-radius:6px;transition:all .25s;}
+.capture-btn:hover{background:linear-gradient(135deg,rgba(0,255,255,.28),rgba(255,0,255,.28));box-shadow:0 0 14px var(--cyan);}
+
+/* Level up overlay */
+#levelup-overlay{position:absolute;inset:0;z-index:180;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(0,0,0,0);pointer-events:none;}
+#levelup-overlay.active{display:flex;animation:levelup-in .4s forwards;}
+@keyframes levelup-in{0%{background:rgba(0,0,0,0);}100%{background:rgba(0,20,40,.85);}}
+.levelup-title{font-family:'Orbitron',monospace;font-size:clamp(20px,5vw,32px);font-weight:900;color:var(--gold);text-align:center;text-shadow:0 0 30px var(--gold);animation:pulse-text 1s ease infinite;}
+.levelup-name{font-family:'Orbitron',monospace;font-size:clamp(11px,3vw,16px);color:var(--cyan);letter-spacing:3px;text-align:center;}
+@keyframes pulse-text{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.8;transform:scale(1.04);}}
+
+/* Notifications */
+#notif{position:absolute;top:56px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--gold);font-family:'Orbitron',monospace;font-size:9px;padding:6px 14px;border-radius:4px;letter-spacing:2px;pointer-events:none;z-index:200;opacity:0;transition:opacity .3s;white-space:nowrap;}
+#notif.show{opacity:1;}
+
+/* Domain overlay */
+#domain-overlay{position:absolute;inset:0;z-index:150;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+#domain-overlay.active{display:flex;animation:domain-in .5s forwards;}
+@keyframes domain-in{0%{background:rgba(0,0,0,0);}50%{background:rgba(60,0,100,.9);}100%{background:rgba(30,0,50,.75);}}
+.domain-title{font-family:'Orbitron',monospace;font-size:clamp(16px,4.5vw,30px);font-weight:900;color:var(--magenta);text-align:center;text-shadow:0 0 28px var(--magenta);animation:pulse-text 1s ease infinite;}
+.domain-name{font-family:'Orbitron',monospace;font-size:clamp(10px,2.5vw,16px);color:var(--cyan);letter-spacing:3px;text-align:center;margin-top:4px;}
+.domain-ring{width:clamp(90px,26vw,170px);height:clamp(90px,26vw,170px);border-radius:50%;border:3px solid var(--magenta);box-shadow:0 0 40px var(--magenta),inset 0 0 40px rgba(255,0,255,.25);animation:ring-pulse 1s ease-in-out infinite;}
+@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.12);opacity:.7;}}
+.domain-sub{font-size:9px;color:#aa8;letter-spacing:2px;}
+
+/* Flash transition */
+#flash{position:absolute;inset:0;background:#fff;z-index:300;opacity:0;pointer-events:none;transition:opacity .12s;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.2);}
+::-webkit-scrollbar-thumb{background:rgba(0,255,255,.25);border-radius:2px;}
+
+/* Responsive */
+@media(max-height:580px){
+  .battle-arena{padding:5px 8px 3px;}
+  .move-btn{padding:6px 5px;}
+  #combat-log{min-height:38px;max-height:48px;}
+  .sprite-zone{margin:0 4px 0;}
+  .enemy-sprite-wrap,.player-sprite-wrap{width:68px;height:68px;}
+}
+</style>
+</head>
+<body>
+<div id="game">
+<div id="flash"></div>
+<div id="notif"></div>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen" class="screen active">
+  <div class="title-logo">
+    <div class="line1">ABILITIES</div>
+    <div class="line2">W O R L D</div>
+  </div>
+  <div class="title-ver">v3 · SCP-ACOTW ARCHIVE EDITION</div>
+  <div class="title-sub">YEAR 1915a · GUGLE INVASION IN PROGRESS</div>
+  <div class="clan-select">
+    <h3>▸ SELECT YOUR CLAN</h3>
+    <div class="clan-btn" data-clan="elemental" onclick="selectClan(this)">
+      <div class="clan-icon">🌿</div>
+      <div class="clan-info">
+        <div class="clan-name">ELEMENTAL CLAN</div>
+        <div class="clan-desc">Asia · ACOTW-created · Starter: Lightning Beast</div>
+      </div>
+    </div>
+    <div class="clan-btn" data-clan="flint" onclick="selectClan(this)">
+      <div class="clan-icon">🧬</div>
+      <div class="clan-info">
+        <div class="clan-name">FLINT CLAN</div>
+        <div class="clan-desc">Australia · 1B Members · Starter: Slime Entity</div>
+      </div>
+    </div>
+    <div class="clan-btn" data-clan="acotw" onclick="selectClan(this)">
+      <div class="clan-icon">🚀</div>
+      <div class="clan-info">
+        <div class="clan-name">ACOTW</div>
+        <div class="clan-desc">Mars Colony · Einstein's Legacy · Starter: Core Breaker</div>
+      </div>
+    </div>
+    <div class="clan-btn" data-clan="saeo" onclick="selectClan(this)">
+      <div class="clan-icon">⚔️</div>
+      <div class="clan-info">
+        <div class="clan-name">SAEO CLAN</div>
+        <div class="clan-desc">Russia · Copy Arts · Starter: Kwaku Copycat</div>
+      </div>
+    </div>
+    <div class="clan-btn" data-clan="neydis" onclick="selectClan(this)">
+      <div class="clan-icon">🌑</div>
+      <div class="clan-info">
+        <div class="clan-name">NEYDIS CLAN</div>
+        <div class="clan-desc">South Africa · Wally's Frame Control · Starter: Frame Freeze</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startGame()">▶ BEGIN JOURNEY</button>
+  </div>
+  <div class="title-lore">ADAM & EVE · GREAT WAR · YEAR RESET · IN-BETWEEN REALM · GUGLE INVASION 1915a · ROP vs ACOTW</div>
+</div>
+
+<!-- EXPLORE SCREEN -->
+<div id="explore-screen" class="screen">
+  <canvas id="explore-canvas"></canvas>
+  <div class="explore-hud">
+    <div class="hud-top">
+      <div class="hud-region" id="hud-region">ELEMENTAL ZONE</div>
+      <div class="hud-player">
+        <div class="hud-rank" id="hud-rank">RANK: F</div>
+        <div class="hud-meta"><span id="hud-captures">CAPTURES: 0</span> · <span id="hud-wins">WINS: 0</span></div>
+        <div class="hud-catchers" id="hud-catchers">🎯 CATCHERS: 5</div>
+      </div>
+    </div>
+    <div class="hud-team" id="hud-team"></div>
+  </div>
+  <div class="dpad">
+    <div class="dpad-btn dpad-up" id="btn-up">▲</div>
+    <div class="dpad-btn dpad-down" id="btn-down">▼</div>
+    <div class="dpad-btn dpad-left" id="btn-left">◄</div>
+    <div class="dpad-btn dpad-right" id="btn-right">►</div>
+    <div class="dpad-center dpad-btn">✦</div>
+  </div>
+  <div class="action-btns">
+    <button class="act-btn" onclick="showTeam()">👥 TEAM</button>
+    <button class="act-btn" onclick="showDex()">📖 DEX</button>
+    <button class="act-btn" onclick="saveGame()">💾 SAVE</button>
+  </div>
+  <div id="msg-box">
+    <div id="msg-title">SYSTEM</div>
+    <div id="msg-text">Welcome to Abilities World.</div>
+  </div>
+</div>
+
+<!-- BATTLE SCREEN -->
+<div id="battle-screen" class="screen">
+  <div class="battle-bg"></div>
+  <div id="domain-overlay">
+    <div class="domain-ring"></div>
+    <div class="domain-title">DOMAIN EXPANSION</div>
+    <div class="domain-name" id="domain-name-text"></div>
+    <div class="domain-sub" id="domain-sub-text"></div>
+  </div>
+  <div id="levelup-overlay">
+    <div class="levelup-title">LEVEL UP!</div>
+    <div class="levelup-name" id="levelup-name"></div>
+  </div>
+  <div class="battle-arena">
+    <div class="enemy-row">
+      <div class="battle-info-box enemy">
+        <span class="bib-rank" id="b-enemy-rank">S</span>
+        <div class="bib-name" id="b-enemy-name">Frame Walker</div>
+        <div class="bib-type" id="b-enemy-type">In-Between Realm Entity</div>
+        <div class="hp-row">
+          <span class="hp-label">HP</span>
+          <div class="hp-bar"><div class="hp-fill enemy" id="b-enemy-hp-fill" style="width:100%"></div></div>
+          <span class="hp-text" id="b-enemy-hp-text">100/100</span>
+        </div>
+        <div class="bib-status" id="b-enemy-status"></div>
+      </div>
+    </div>
+    <div class="sprite-zone">
+      <div class="enemy-sprite-wrap" id="b-enemy-sprite"></div>
+      <div class="player-sprite-wrap" id="b-player-sprite"></div>
+    </div>
+    <div class="style-row">
+      <span class="style-label">STYLE</span>
+      <div class="style-bar"><div class="style-fill" id="style-fill" style="width:0%"></div></div>
+      <span class="style-pct" id="style-pct">0%</span>
+      <span class="style-rank-badge rank-F" id="style-badge">F</span>
+    </div>
+    <div class="battle-info-box player" style="margin-bottom:5px;">
+      <span class="bib-rank" id="b-player-rank">B</span>
+      <span class="bib-level" id="b-player-level">Lv.1</span>
+      <div class="bib-name" id="b-player-name">Lightning Beast</div>
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-bar"><div class="hp-fill player" id="b-player-hp-fill" style="width:100%"></div></div>
+        <span class="hp-text" id="b-player-hp-text">150/150</span>
+      </div>
+      <div class="xp-row">
+        <span class="xp-label">XP</span>
+        <div class="xp-bar"><div class="xp-fill" id="b-xp-fill" style="width:0%"></div></div>
+      </div>
+      <div class="bib-status" id="b-player-status"></div>
+      <div class="battle-catchers" id="b-catchers">🎯 Frame Catchers: 5</div>
+    </div>
+    <div id="combat-log"></div>
+    <div class="move-grid" id="move-grid">
+      <button class="move-btn basic" id="mv0" onclick="playerMove(0)">
+        <span class="mv-name">Basic</span><span class="mv-type">–</span>
+      </button>
+      <button class="move-btn negative" id="mv1" onclick="playerMove(1)">
+        <span class="mv-name">Negative</span><span class="mv-type">–</span>
+      </button>
+      <button class="move-btn ultimate" id="mv2" onclick="playerMove(2)">
+        <span class="mv-name">Ultimate</span><span class="mv-type">–</span>
+      </button>
+      <button class="move-btn domain" id="mv3" onclick="playerMove(3)">
+        <span class="mv-name">DOMAIN EXPANSION</span><span class="mv-type">–</span>
+      </button>
+    </div>
+    <div class="battle-actions-row">
+      <button class="battle-sub-btn" id="catch-btn" onclick="tryCatch()">🎯 CATCH</button>
+      <button class="battle-sub-btn" id="run-btn" onclick="tryRun()">↩ RUN</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM OVERLAY -->
+<div class="overlay" id="team-overlay">
+  <div class="overlay-title">▸ ACTIVE TEAM</div>
+  <button class="close-btn" onclick="closeOverlay('team-overlay')">✕</button>
+  <div class="team-grid" id="team-grid"></div>
+  <div style="margin-top:10px;font-size:9px;color:#334;text-align:center;">Tap creature to set as lead · Gold border = active lead</div>
+  <div style="margin-top:6px;font-size:9px;color:#223;text-align:center;">WASD/arrows or D-pad to move · Stand still on PATH to rest (+HP)</div>
+</div>
+
+<!-- DEX OVERLAY -->
+<div class="overlay" id="dex-overlay">
+  <div class="overlay-title">▸ ENTITY DATABASE</div>
+  <button class="close-btn" onclick="closeOverlay('dex-overlay')">✕</button>
+  <div class="dex-list" id="dex-list"></div>
+</div>
+
+<!-- CAPTURE SCREEN -->
+<div id="capture-screen" class="screen">
+  <div class="capture-inner">
+    <div class="capture-title" id="cap-title">DEPLOY FRAME CATCHER</div>
+    <div class="capture-sub" id="cap-sub">Target weakened</div>
+    <div class="capture-ball" id="cap-ball"></div>
+    <div class="capture-result" id="cap-result"></div>
+    <button class="capture-btn" id="cap-btn" onclick="executeCatch()">THROW!</button>
+  </div>
+</div>
+
+</div><!-- #game -->
+<script>
+// ============================================================
+// ABILITIES WORLD v3 — Full Engine with Bug Fixes + New Content
+// ============================================================
+const TS=20, MW=70, MH=54;
+const TILE={VOID:0,GRASS:1,SAND:2,STONE:3,WATER:4,DARK:5,CITY:6,PATH:7,PORTAL:8,LAVA:9};
+
+// ---- XP & LEVELING ----
+const XP_PER_LEVEL=[0,100,250,450,700,1000]; // XP thresholds for Lv1-5
+function xpForLevel(lv){return XP_PER_LEVEL[Math.min(lv,5)]||1000;}
+function getCreatureLevel(t){return t.level||1;}
+function creatureMaxHP(baseHP,lv){return Math.floor(baseHP*(1+0.12*(lv-1)));}
+
+// ---- CREATURES ----
+const CREATURES={
+  lightning_beast:{
+    id:'lightning_beast',name:'Lightning Beast',rank:'B',rarity:'common',region:'elemental',captureRate:65,baseHP:130,type:'Lightning',
+    lore:'Born from the first storm conjured by an Elemental Clan warrior. Crackling with voltage drawn from the Sky Pillar in the Himalayas. Its roar sounds like thunder splitting mountains.',
+    moves:[
+      {name:'Volt Strike',type:'basic',power:18,status:null,desc:'Crackling dash delivering 10 million volts on contact.'},
+      {name:'Static Drain',type:'negative',power:10,status:{type:'drain',target:'enemy',chance:60},desc:'Reverses polarity — drains foe\'s speed. 60% drain status.'},
+      {name:'100M Volt Dragon',type:'ultimate',power:38,status:{type:'stun',target:'enemy',chance:35},desc:'Summons a dragon of pure electricity. 35% stun on hit.'},
+      {name:'Storm Eternal',type:'domain',power:55,status:null,desc:'Domain Expansion — The sky cracks open, lightning falls on all enemies forever.'}
+    ],stats:{STR:65,POW:88,ABIL:72,INTEL:55,SPD:90}
+  },
+  slime_entity:{
+    id:'slime_entity',name:'Slime Entity',rank:'C',rarity:'common',region:'flint',captureRate:70,baseHP:110,type:'Slime',
+    lore:'A Flint Clan creation from the slime-rivers of Australia. It can clone itself indefinitely. Each clone carries the same memories. 1 billion Flint members means 1 billion potential hosts.',
+    moves:[
+      {name:'Acid Spit',type:'basic',power:14,status:null,desc:'Corrosive slime projectile that melts armor.'},
+      {name:'Clone Fracture',type:'negative',power:8,status:{type:'drain',target:'enemy',chance:70},desc:'Splits into mirror images — confuses targeting. 70% drain.'},
+      {name:'Absorption Wave',type:'ultimate',power:30,status:{type:'lock',target:'self',chance:100},desc:'Absorbs enemy ability type — becomes immune to it. +lock buff.'},
+      {name:'Infinite Replication',type:'domain',power:48,status:null,desc:'Domain Expansion — Entire field floods with clones. Inescapable.'}
+    ],stats:{STR:50,POW:68,ABIL:85,INTEL:62,SPD:45}
+  },
+  frame_freeze:{
+    id:'frame_freeze',name:'Frame Freeze',rank:'A',rarity:'rare',region:'neydis',captureRate:35,baseHP:155,type:'Frame',
+    lore:'Wally\'s original technique given sentient form. Wally\'s ability to control frames of time — pause, rewind, accelerate — spawned this entity. A Neydis Clan weapon perfected over centuries in South Africa.',
+    moves:[
+      {name:'Frame Lock',type:'basic',power:22,status:{type:'stun',target:'enemy',chance:50},desc:'Halts enemy for one turn — frame frozen. 50% stun.'},
+      {name:'Time Reversal',type:'negative',power:14,status:null,desc:'Reverses the last enemy action — negates last move used.'},
+      {name:'Temporal Crush',type:'ultimate',power:42,status:{type:'stun',target:'enemy',chance:60},desc:'Compresses 1000 frames into instant damage. 60% stun.'},
+      {name:'Frame World',type:'domain',power:60,status:null,desc:'Domain Expansion — Reality freezes. Only Frame users may act.'}
+    ],stats:{STR:72,POW:80,ABIL:88,INTEL:70,SPD:78}
+  },
+  core_breaker:{
+    id:'core_breaker',name:'Core Breaker',rank:'B',rarity:'uncommon',region:'acotw',captureRate:50,baseHP:140,type:'Tech',
+    lore:'ACOTW prototype weapon from Mars Colony. Built with Dyson sphere energy cores. Einstein\'s equations are etched into its chassis. Precision-designed to strike at the exact center of any ability construct.',
+    moves:[
+      {name:'Core Detect',type:'basic',power:20,status:null,desc:'Scans and strikes the weakest point in any defense.'},
+      {name:'Power Drain',type:'negative',power:12,status:{type:'drain',target:'enemy',chance:65},desc:'Siphons energy from tech-based abilities. 65% drain.'},
+      {name:'Precision Strike',type:'ultimate',power:40,status:null,desc:'Calculated hit targeting a single critical node. Ignores defenses.'},
+      {name:'Dyson Collapse',type:'domain',power:58,status:null,desc:'Domain Expansion — All energy consumed by a miniature Dyson sphere.'}
+    ],stats:{STR:78,POW:75,ABIL:70,INTEL:92,SPD:68}
+  },
+  mirror_regiment:{
+    id:'mirror_regiment',name:'Mirror Regiment',rank:'C',rarity:'uncommon',region:'rop',captureRate:55,baseHP:105,type:'Adaptive',
+    lore:'ROP bio-engineered soldiers granted ability-mimicry via HRW lockers. Study and replicate any technique within 3 observations. Anti-ability origins made them paradoxically ability-dependent.',
+    moves:[
+      {name:'Copy Form',type:'basic',power:16,status:null,desc:'Copies the last attack used against it.'},
+      {name:'Ability Lock',type:'negative',power:9,status:{type:'lock',target:'enemy',chance:80},desc:'Applies HRW locker — suppresses enemy domain for 2 turns. 80%.'},
+      {name:'Perfect Mirror',type:'ultimate',power:35,status:null,desc:'Perfectly reflects the enemy\'s ultimate move back at 1.5x power.'},
+      {name:'Adaptive Field',type:'domain',power:52,status:null,desc:'Domain Expansion — All abilities in range are mirrored and returned.'}
+    ],stats:{STR:58,POW:62,ABIL:90,INTEL:75,SPD:60}
+  },
+  kwaku_copycat:{
+    id:'kwaku_copycat',name:'Kwaku Copycat',rank:'A',rarity:'rare',region:'rift',captureRate:28,baseHP:145,type:'Copy',
+    lore:'Kwaku — a prodigy from West Africa (1914a) whose power is to copy any ability he witnesses. Taken from his family at 13 and forced into government service. He later fused with a Gugle parasite, gaining alien intelligence. His chilling words: "I\'m not Kwaku."',
+    moves:[
+      {name:'Ability Echo',type:'basic',power:20,status:null,desc:'Copies and reflects the last move used against Kwaku.'},
+      {name:'Gugle Sync',type:'negative',power:12,status:{type:'drain',target:'enemy',chance:55},desc:'Alien telepathy disrupts target\'s motor control. 55% drain.'},
+      {name:'Perfect Copy',type:'ultimate',power:44,status:{type:'stun',target:'enemy',chance:30},desc:'Copies the most powerful ability seen in battle at 1.3x. 30% stun.'},
+      {name:'I Am Not Kwaku',type:'domain',power:68,status:{type:'lock',target:'enemy',chance:100},desc:'Domain Expansion — Alien consciousness floods the field. All enemy abilities locked.'}
+    ],stats:{STR:70,POW:82,ABIL:99,INTEL:90,SPD:75}
+  },
+  music_man:{
+    id:'music_man',name:'Music Man',rank:'B',rarity:'uncommon',region:'elemental',captureRate:45,baseHP:125,type:'Sound',
+    lore:'An entity that manipulates music into solid matter. Brazilian phonk creates heavy concussive blasts — classical creates razor-precise mind attacks. Rides on solid musical notes. Its domain forces all combatants to move to its chosen rhythm or suffer consequences.',
+    moves:[
+      {name:'Phonk Blast',type:'basic',power:19,status:null,desc:'Heavy bass solidifies into a bone-rattling concussion wave.'},
+      {name:'Classical Slash',type:'negative',power:11,status:{type:'drain',target:'enemy',chance:50},desc:'Razor-precise classical notes cut through mental defenses. 50% drain.'},
+      {name:'Note Avalanche',type:'ultimate',power:37,status:{type:'stun',target:'enemy',chance:40},desc:'Stacks all pending musical energy — releases as one massive beat-drop. 40% stun.'},
+      {name:'Rhythm Domain',type:'domain',power:56,status:null,desc:'Domain Expansion — All must move to the beat. Break rhythm and face extra gravity or energy loss.'}
+    ],stats:{STR:60,POW:78,ABIL:82,INTEL:85,SPD:88}
+  },
+  achilles_grapple:{
+    id:'achilles_grapple',name:'Achilles Grapple',rank:'A',rarity:'rare',region:'in_between',captureRate:22,baseHP:160,type:'Void',
+    lore:'Manifested from the paradox of Achilles and the Tortoise. Places 2 points in space between which lies infinite space — causing anyone caught between them to have their speed reduced to zero. If time/distance creates infinite loops, effective speed becomes undefined.',
+    moves:[
+      {name:'Point Mark',type:'basic',power:21,desc:'Marks 2 spatial points around target — reduces speed stat by 30%.'},
+      {name:'Infinite Gap',type:'negative',power:0,status:{type:'stun',target:'enemy',chance:45},desc:'Creates infinite space between target and exit — 45% full paralysis.'},
+      {name:'Zero Velocity',type:'ultimate',power:46,status:{type:'stun',target:'enemy',chance:70},desc:'Speed collapses to zero — time/distance paradox. 70% stun.'},
+      {name:'Paradox Realm',type:'domain',power:64,status:null,desc:'Domain Expansion — All space becomes infinite. No one reaches anywhere. Total paralysis.'}
+    ],stats:{STR:65,POW:85,ABIL:90,INTEL:92,SPD:30}
+  },
+  mr_sandman:{
+    id:'mr_sandman',name:'Mr. Sandman',rank:'A',rarity:'rare',region:'in_between',captureRate:25,baseHP:175,type:'Dream',
+    lore:'SCP-class entity from the In-Between Realm. A faceless figure in a 1950s brown coat who appears in dreams. Those cursed by Sandman\'s touch fall into eternal sleep — dreaming their worst fears endlessly. He wears a coat from the future (1950a) as the year it was discovered was 1925a.',
+    moves:[
+      {name:'Sandman\'s Touch',type:'basic',power:24,status:{type:'stun',target:'enemy',chance:45},desc:'Single touch induces nightmare paralysis. 45% stun.'},
+      {name:'Dream Inversion',type:'negative',power:16,status:{type:'drain',target:'enemy',chance:75},desc:'Turns pleasant memories into fear — massive psychological debuff. 75% drain.'},
+      {name:'Reality Lock',type:'ultimate',power:45,status:{type:'stun',target:'enemy',chance:60},desc:'Traps target in recursive dream loop. 60% skip-turn.'},
+      {name:'Infinite Nightmare',type:'domain',power:65,status:null,desc:'Domain Expansion — All conscious beings in range fall into waking nightmares.'}
+    ],stats:{STR:68,POW:92,ABIL:88,INTEL:80,SPD:55}
+  },
+  frame_walker:{
+    id:'frame_walker',name:'Frame Walker SCP-000-F',rank:'S',rarity:'legendary',region:'in_between',captureRate:10,baseHP:220,type:'Frame',
+    lore:'SCP-000-F. The original Frame Walker. Always behind you. Always has been. Temporal Override means it acts before any other entity regardless of speed. Frame Immunity renders all non-frame attacks weaker. Classified beyond all known threat tiers.',
+    moves:[
+      {name:'Always Behind You',type:'basic',power:28,status:{type:'stun',target:'enemy',chance:25},desc:'Teleports behind target — cannot be dodged. 25% stun.'},
+      {name:'Frame Immunity',type:'negative',power:5,status:null,desc:'Reduces incoming damage by 35% this turn. Self-buff.'},
+      {name:'Temporal Override',type:'ultimate',power:50,status:{type:'stun',target:'enemy',chance:50},desc:'Acts first regardless of speed. Resets enemy\'s last action. 50% stun.'},
+      {name:'SCP-000-F Protocol',type:'domain',power:80,status:{type:'lock',target:'enemy',chance:100},desc:'Domain Expansion — Time collapses. All temporal abilities nullified. Enemy ability locked.'}
+    ],stats:{STR:88,POW:95,ABIL:99,INTEL:85,SPD:99}
+  },
+  ledger_warden:{
+    id:'ledger_warden',name:'Ledger Warden',rank:'A',rarity:'rare',region:'in_between',captureRate:20,baseHP:165,type:'Soul',
+    lore:'The Grim Reaper given manifest form by the In-Between Realm. Carries a ledger of every soul that passed through. Life Reflection shows a person their death before it happens. Soul Weight calculates sin — heavier souls take more damage.',
+    moves:[
+      {name:'Soul Weight',type:'basic',power:20,status:{type:'drain',target:'enemy',chance:60},desc:'Heavier spiritual burden = more damage. 60% drain.'},
+      {name:'Life Reflection',type:'negative',power:15,status:{type:'stun',target:'enemy',chance:35},desc:'Shows enemy their own death — massive psychological debuff. 35% stun.'},
+      {name:'Final Entry',type:'ultimate',power:44,status:{type:'drain',target:'enemy',chance:80},desc:'Writes target\'s name in the Ledger — seals fate. 80% drain.'},
+      {name:'Domain of Judgment',type:'domain',power:62,status:null,desc:'Domain Expansion — All souls in range are weighed. None escape judgment.'}
+    ],stats:{STR:70,POW:88,ABIL:85,INTEL:95,SPD:50}
+  },
+  silent_time:{
+    id:'silent_time',name:'Silent Time',rank:'S',rarity:'legendary',region:'in_between',captureRate:8,baseHP:240,type:'Void',
+    lore:'The most feared entity in the In-Between Realm. Its domain "Drowning in Silence" makes 5 minutes feel like an eternity of suffocation. No known weakness. No known origin. Those who survive it never speak again.',
+    moves:[
+      {name:'Silence Field',type:'basic',power:26,status:{type:'lock',target:'enemy',chance:55},desc:'All sound is annihilated. Enemies cannot signal. 55% ability lock.'},
+      {name:'Void Inversion',type:'negative',power:18,status:null,desc:'Inverts all positive effects on the target.'},
+      {name:'Eternal 5 Minutes',type:'ultimate',power:52,status:{type:'stun',target:'enemy',chance:75},desc:'Subjective time dilation — enemy paralyzed. 75% stun.'},
+      {name:'Drowning in Silence',type:'domain',power:85,status:null,desc:'Domain Expansion — No weakness. All sounds cease. Suffocation begins. No escape.'}
+    ],stats:{STR:80,POW:99,ABIL:99,INTEL:90,SPD:70}
+  },
+  blackout_leviathan:{
+    id:'blackout_leviathan',name:'Blackout Leviathan',rank:'A',rarity:'rare',region:'neydis',captureRate:28,baseHP:180,type:'Energy',
+    lore:'Neydis Clan heavy weapon. A massive serpentine entity that consumes electromagnetic energy. Single roar produces an EMP pulse equivalent to 10 nuclear electromagnetic detonations. Deployed in the 1950a failed war.',
+    moves:[
+      {name:'Energy Bite',type:'basic',power:25,status:null,desc:'Consumes and deals electrical energy damage.'},
+      {name:'EMP Roar',type:'negative',power:12,status:{type:'lock',target:'enemy',chance:70},desc:'Electromagnetic pulse — disables tech abilities. 70% ability lock.'},
+      {name:'Energy Consumption',type:'ultimate',power:48,status:null,desc:'Absorbs all energy attacks directed at it — amplifies next strike.'},
+      {name:'Blackout Dominion',type:'domain',power:68,status:null,desc:'Domain Expansion — All energy goes dark. Leviathan feeds on the void.'}
+    ],stats:{STR:85,POW:90,ABIL:80,INTEL:60,SPD:72}
+  },
+  skybreaker_colossus:{
+    id:'skybreaker_colossus',name:'Skybreaker Colossus',rank:'S',rarity:'legendary',region:'neydis',captureRate:12,baseHP:230,type:'Gravity',
+    lore:'The crown weapon of the Neydis Clan. Created to eradicate non-powered humans per clan doctrine. Gravity Inversion allows it to flip the battlefield — sky becomes ground. Aerial Suppression prevents any flight or ranged attacks.',
+    moves:[
+      {name:'Gravity Fist',type:'basic',power:30,status:{type:'stun',target:'enemy',chance:20},desc:'Increases local gravity 10x at point of impact. 20% stun.'},
+      {name:'Aerial Suppression',type:'negative',power:8,status:{type:'drain',target:'enemy',chance:100},desc:'All ranged attacks halved. 100% drain status on target.'},
+      {name:'Gravity Inversion',type:'ultimate',power:55,status:{type:'stun',target:'enemy',chance:60},desc:'Flips battlefield gravity — all enemies launched into ceiling. 60% stun.'},
+      {name:'Sky Breaker',type:'domain',power:82,status:null,desc:'Domain Expansion — Gravity becomes infinite. Nothing escapes the crush.'}
+    ],stats:{STR:99,POW:88,ABIL:82,INTEL:72,SPD:60}
+  },
+  gugle_parasite:{
+    id:'gugle_parasite',name:'Gugle Parasite',rank:'B',rarity:'uncommon',region:'rift',captureRate:40,baseHP:120,type:'Alien',
+    lore:'Green slug-like alien from beyond the interdimensional rifts. Enters via ear canal to reach the nervous center. Establishes telepathic communication first — then attempts body takeover to spread its species. The 1915a invasion nearly ended humanity. Some learned to coexist.',
+    moves:[
+      {name:'Telepathic Link',type:'basic',power:15,status:{type:'drain',target:'enemy',chance:60},desc:'Neural connection — reads enemy\'s next move. 60% drain.'},
+      {name:'Nervous Override',type:'negative',power:10,status:{type:'stun',target:'enemy',chance:55},desc:'Disrupts motor control — enemy misses next attack. 55% stun.'},
+      {name:'Body Takeover',type:'ultimate',power:38,status:{type:'lock',target:'enemy',chance:65},desc:'Temporary neural control — forces enemy confusion. 65% ability lock.'},
+      {name:'Gugle Swarm',type:'domain',power:54,status:null,desc:'Domain Expansion — Dozens of parasites phase through all defenses simultaneously.'}
+    ],stats:{STR:45,POW:70,ABIL:88,INTEL:95,SPD:80}
+  }
+};
+
+// ---- REGIONS ----
+const REGIONS={
+  elemental:{name:'Elemental Zone',color:'#0a2a0a',accent:'#00ff88',creatures:['lightning_beast','slime_entity','music_man']},
+  acotw:{name:'ACOTW Mars Colony',color:'#2a1500',accent:'#ff6600',creatures:['core_breaker','mirror_regiment','gugle_parasite']},
+  rop:{name:'ROP Territory',color:'#1a1a1a',accent:'#aaaaaa',creatures:['mirror_regiment','core_breaker','slime_entity']},
+  in_between:{name:'In-Between Realm',color:'#1a0030',accent:'#ff00ff',creatures:['mr_sandman','frame_walker','ledger_warden','silent_time','achilles_grapple']},
+  neydis:{name:'Neydis War Zone',color:'#2a0000',accent:'#ff2244',creatures:['frame_freeze','blackout_leviathan','skybreaker_colossus']},
+  rift:{name:'Rift Zone',color:'#001a2a',accent:'#00ffff',creatures:['gugle_parasite','kwaku_copycat','achilles_grapple']}
+};
+
+// ---- GAME STATE ----
+let G={
+  clan:'elemental',
+  playerX:35,playerY:27,
+  dir:2,steps:0,captures:0,wins:0,rank:'F',
+  team:[],lead:0,
+  dex:{},items:{frameCatchers:5},
+  map:null,regionMap:null,
+  currentRegion:'elemental',
+  moving:{up:false,down:false,left:false,right:false},
+  lastEncounterStep:0,
+  restTimer:0,
+  lastRestStep:0
+};
+
+// ---- MAP GENERATION ----
+function noise(x,y){let h=(x*374761393+y*668265263);h=(h^(h>>13))*1274126177;return((h^(h>>16))&0xffff)/0xffff;}
+function generateMap(){
+  const m=new Uint8Array(MW*MH), r=new Uint8Array(MW*MH);
+  for(let y=0;y<MH;y++){
+    for(let x=0;x<MW;x++){
+      const i=y*MW+x;
+      let reg=0;
+      if(y<18){reg=(x<28)?1:2;}
+      else if(y<36){
+        if(x<14) reg=3;
+        else if(x>56) reg=4;
+        else if(y>26&&x>28&&x<50) reg=5;
+        else reg=0;
+      } else {reg=(x>40)?4:6;}
+      r[i]=reg;
+      const n=noise(x,y);
+      switch(reg){
+        case 0: m[i]=n<0.25?TILE.PATH:(n<0.4?TILE.GRASS:TILE.STONE); break;
+        case 1: m[i]=n<0.1?TILE.WATER:(n<0.5?TILE.GRASS:TILE.STONE); break;
+        case 2: m[i]=n<0.3?TILE.LAVA:(n<0.5?TILE.SAND:TILE.STONE); break;
+        case 3: m[i]=n<0.3?TILE.PATH:(n<0.5?TILE.CITY:TILE.STONE); break;
+        case 4: m[i]=n<0.2?TILE.PORTAL:(n<0.5?TILE.DARK:TILE.VOID); break;
+        case 5: m[i]=n<0.2?TILE.LAVA:(n<0.4?TILE.STONE:TILE.SAND); break;
+        case 6: m[i]=n<0.3?TILE.WATER:(n<0.5?TILE.DARK:TILE.GRASS); break;
+        default: m[i]=TILE.GRASS;
+      }
+    }
+  }
+  for(let x=0;x<MW;x++){m[27*MW+x]=TILE.PATH;r[27*MW+x]=0;}
+  for(let y=0;y<MH;y++){m[y*MW+35]=TILE.PATH;r[y*MW+35]=0;}
+  for(let x=10;x<60;x++){m[18*MW+x]=TILE.PATH;}
+  for(let x=14;x<55;x++){m[36*MW+x]=TILE.PATH;}
+  m[9*MW+14]=TILE.PORTAL; m[9*MW+50]=TILE.PORTAL;
+  m[44*MW+20]=TILE.PORTAL; m[44*MW+55]=TILE.PORTAL;
+  G.map=m; G.regionMap=r;
+}
+
+function getRegionAtTile(tx,ty){
+  if(tx<0||ty<0||tx>=MW||ty>=MH) return 'elemental';
+  const rnames=['path','elemental','acotw','rop','in_between','neydis','rift'];
+  const rkey=rnames[G.regionMap[ty*MW+tx]]||'elemental';
+  return REGIONS[rkey]?rkey:'elemental';
+}
+
+// ---- CANVAS ----
+const TILE_COLORS={
+  [TILE.VOID]:'#080010',[TILE.GRASS]:'#0c280c',[TILE.SAND]:'#281c07',
+  [TILE.STONE]:'#181820',[TILE.WATER]:'#061226',[TILE.DARK]:'#090016',
+  [TILE.CITY]:'#121218',[TILE.PATH]:'#1a1a20',[TILE.PORTAL]:'#180040',[TILE.LAVA]:'#280600'
+};
+const TILE_ACCENTS={
+  [TILE.GRASS]:'#18401a',[TILE.SAND]:'#38260e',[TILE.WATER]:'#0a2440',
+  [TILE.DARK]:'#130022',[TILE.CITY]:'#1e1e2c',[TILE.PORTAL]:'#2e0078',[TILE.LAVA]:'#380a00'
+};
+
+let canvas,ctx;
+function initCanvas(){
+  canvas=document.getElementById('explore-canvas');
+  const scr=document.getElementById('explore-screen');
+  canvas.width=scr.clientWidth||window.innerWidth;
+  canvas.height=scr.clientHeight||window.innerHeight;
+  ctx=canvas.getContext('2d');
+}
+
+function renderExplore(){
+  if(!ctx||!G.map) return;
+  const W=canvas.width,H=canvas.height;
+  const camX=Math.floor(G.playerX*TS-W/2);
+  const camY=Math.floor(G.playerY*TS-H/2);
+  ctx.fillStyle='#050510';
+  ctx.fillRect(0,0,W,H);
+  const stX=Math.max(0,Math.floor(camX/TS));
+  const stY=Math.max(0,Math.floor(camY/TS));
+  const enX=Math.min(MW-1,stX+Math.ceil(W/TS)+1);
+  const enY=Math.min(MH-1,stY+Math.ceil(H/TS)+1);
+  for(let ty=stY;ty<=enY;ty++){
+    for(let tx=stX;tx<=enX;tx++){
+      const tile=G.map[ty*MW+tx];
+      const sx=tx*TS-camX,sy=ty*TS-camY;
+      ctx.fillStyle=TILE_COLORS[tile]||'#111';
+      ctx.fillRect(sx,sy,TS,TS);
+      if(TILE_ACCENTS[tile]&&noise(tx,ty)>0.62){
+        ctx.fillStyle=TILE_ACCENTS[tile];
+        ctx.fillRect(sx+2,sy+2,TS-4,TS-4);
+      }
+      if(tile===TILE.PORTAL){
+        const t=Date.now()/1200;
+        ctx.fillStyle=`rgba(100,0,220,${0.2+0.15*Math.sin(t+tx)})`;
+        ctx.beginPath();ctx.arc(sx+TS/2,sy+TS/2,TS/2,0,Math.PI*2);ctx.fill();
+      }
+    }
+  }
+  // Rest indicator on PATH
+  const curTile=G.map[G.playerY*MW+G.playerX];
+  if(curTile===TILE.PATH&&isStanding()){
+    const px2=G.playerX*TS-camX,py2=G.playerY*TS-camY;
+    const prog=Math.min(1,(Date.now()-G.restTimer)/3000);
+    ctx.strokeStyle=`rgba(0,255,136,${0.5*prog})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(px2+TS/2,py2+TS/2,TS/2+3,0,Math.PI*2*prog);
+    ctx.stroke();
+  }
+  // Player
+  const px=G.playerX*TS-camX,py=G.playerY*TS-camY;
+  ctx.shadowBlur=14;ctx.shadowColor='#00ffff';
+  ctx.fillStyle='#00ffff';
+  ctx.beginPath();ctx.arc(px+TS/2,py+TS/2,TS/2-2,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#fff';
+  const dirs=[[TS/2,2],[TS-2,TS/2],[TS/2,TS-2],[2,TS/2]];
+  const d=dirs[G.dir];
+  ctx.beginPath();ctx.arc(px+d[0],py+d[1],3,0,Math.PI*2);ctx.fill();
+}
+
+function isStanding(){return !G.moving.up&&!G.moving.down&&!G.moving.left&&!G.moving.right;}
+
+// ---- REST SYSTEM ----
+function checkRest(){
+  if(!G.map) return;
+  const tile=G.map[G.playerY*MW+G.playerX];
+  if(tile===TILE.PATH&&isStanding()){
+    if(!G.restTimer) G.restTimer=Date.now();
+    const elapsed=Date.now()-G.restTimer;
+    if(elapsed>=3000&&G.steps-G.lastRestStep>20){
+      G.lastRestStep=G.steps;
+      G.restTimer=0;
+      let healed=false;
+      G.team.forEach(c=>{
+        if(c.currentHP<c.maxHP&&c.currentHP>0){
+          const gain=Math.floor(c.maxHP*0.2);
+          c.currentHP=Math.min(c.maxHP,c.currentHP+gain);
+          healed=true;
+        }
+      });
+      if(healed){notify('RESTED: +20% HP');updateExploreHUD();}
+    }
+  } else {
+    G.restTimer=0;
+  }
+}
+
+// ---- MOVEMENT ----
+let lastMoveTime=0;
+function tryMove(){
+  const now=Date.now();
+  if(now-lastMoveTime<155) return;
+  let nx=G.playerX,ny=G.playerY;
+  if(G.moving.up){ny--;G.dir=0;}
+  else if(G.moving.down){ny++;G.dir=2;}
+  else if(G.moving.left){nx--;G.dir=3;}
+  else if(G.moving.right){nx++;G.dir=1;}
+  else return;
+  if(nx<0||ny<0||nx>=MW||ny>=MH) return;
+  const tile=G.map[ny*MW+nx];
+  if(tile===TILE.VOID||tile===TILE.WATER) return;
+  G.playerX=nx;G.playerY=ny;
+  lastMoveTime=now;
+  G.steps++;
+  G.restTimer=0;
+  const reg=getRegionAtTile(nx,ny);
+  if(reg!==G.currentRegion){
+    G.currentRegion=reg;
+    const rd=REGIONS[reg];
+    if(rd){
+      document.getElementById('hud-region').textContent=rd.name.toUpperCase();
+      showMsg('REGION',`Entering ${rd.name}...`);
+    }
+  }
+  checkEncounter();
+}
+
+function checkEncounter(){
+  if(G.steps-G.lastEncounterStep<8+Math.floor(Math.random()*8)) return;
+  const rd=REGIONS[G.currentRegion];
+  if(!rd) return;
+  const tile=G.map[G.playerY*MW+G.playerX];
+  if(tile===TILE.PATH) return;
+  if(Math.random()>0.32) return;
+  G.lastEncounterStep=G.steps;
+  const pool=rd.creatures;
+  const cid=pool[Math.floor(Math.random()*pool.length)];
+  const c=CREATURES[cid];
+  if(!c) return;
+  showMsg('ENCOUNTER',`A wild ${c.name} appeared! [RANK ${c.rank}]`);
+  setTimeout(()=>startBattle(cid),1100);
+}
+
+// ---- GAME LOOP ----
+let rafId=null;
+function gameLoop(){
+  if(document.getElementById('explore-screen').classList.contains('active')){
+    tryMove();
+    checkRest();
+    renderExplore();
+  }
+  rafId=requestAnimationFrame(gameLoop);
+}
+
+// ---- BATTLE STATE ----
+let BS=null;
+// BS fields: enemy{...creature,hp,maxHP,id,status:{type,turns}},
+//            player{...creature,hp,maxHP,id,teamRef,status:{type,turns}},
+//            styleMeter, domainUsed, enemyDomainUsed, turn, active, pendingXP
+
+function getLeadCreature(){
+  // Find first alive creature; prefer G.lead
+  if(G.team.length===0) return null;
+  const lead=G.team[G.lead];
+  if(lead&&lead.currentHP>0) return lead;
+  // fallback to first alive
+  const alive=G.team.find(t=>t.currentHP>0);
+  if(alive) G.lead=G.team.indexOf(alive);
+  return alive||null;
+}
+
+function startBattle(creatureId){
+  const enemy=CREATURES[creatureId];
+  if(!enemy) return;
+  hideMsg();
+  const lead=getLeadCreature();
+  if(!lead){showMsg('ERROR','All creatures fainted! Rest on a PATH tile to recover.');return;}
+  const playerC=CREATURES[lead.id];
+  BS={
+    enemy:{...enemy,hp:enemy.baseHP,maxHP:enemy.baseHP,id:creatureId,status:null},
+    player:{...playerC,hp:lead.currentHP,maxHP:lead.maxHP,id:lead.id,teamRef:lead,status:lead.status||null},
+    styleMeter:0,domainUsed:false,enemyDomainUsed:false,turn:'player',active:true,pendingXP:0
+  };
+  showScreen('battle-screen');
+  updateBattleUI();
+  logBattle(`⚡ ${enemy.name} [${enemy.rank}] appeared!`,'highlight');
+  logBattle(`${playerC.name} Lv.${lead.level||1} is ready!`);
+}
+
+function updateBattleUI(){
+  if(!BS) return;
+  const e=BS.enemy,p=BS.player;
+  // Enemy
+  document.getElementById('b-enemy-name').textContent=e.name;
+  document.getElementById('b-enemy-rank').textContent=e.rank;
+  document.getElementById('b-enemy-type').textContent=e.type+' · '+(REGIONS[e.region]?.name||e.region);
+  const ePct=Math.max(0,e.hp/e.maxHP);
+  document.getElementById('b-enemy-hp-fill').style.width=(ePct*100)+'%';
+  document.getElementById('b-enemy-hp-fill').className='hp-fill enemy'+(ePct<0.25?' low':'');
+  document.getElementById('b-enemy-hp-text').textContent=Math.max(0,e.hp)+'/'+e.maxHP;
+  renderStatusBadge('b-enemy-status',e.status);
+  // Player
+  document.getElementById('b-player-name').textContent=p.name;
+  document.getElementById('b-player-rank').textContent=p.rank;
+  const lv=p.teamRef?.level||1;
+  document.getElementById('b-player-level').textContent='Lv.'+lv;
+  const pPct=Math.max(0,p.hp/p.maxHP);
+  document.getElementById('b-player-hp-fill').style.width=(pPct*100)+'%';
+  document.getElementById('b-player-hp-fill').className='hp-fill player'+(pPct<0.25?' low':'');
+  document.getElementById('b-player-hp-text').textContent=Math.max(0,p.hp)+'/'+p.maxHP;
+  // XP bar
+  const t=p.teamRef;
+  if(t){
+    const xpNeed=xpForLevel(lv)-xpForLevel(lv-1);
+    const xpHave=(t.xp||0)-xpForLevel(lv-1);
+    document.getElementById('b-xp-fill').style.width=Math.min(100,xpHave/xpNeed*100)+'%';
+  }
+  renderStatusBadge('b-player-status',p.status);
+  document.getElementById('b-catchers').textContent='🎯 Frame Catchers: '+G.items.frameCatchers;
+  // Style meter
+  const sm=BS.styleMeter;
+  document.getElementById('style-fill').style.width=sm+'%';
+  document.getElementById('style-pct').textContent=sm+'%';
+  const srank=sm>=80?'S':sm>=60?'A':sm>=40?'B':sm>=20?'C':sm>=10?'D':'F';
+  const sb=document.getElementById('style-badge');
+  sb.textContent=srank; sb.className='style-rank-badge rank-'+srank;
+  // Enemy sprite
+  document.getElementById('b-enemy-sprite').innerHTML=getCreatureSVG(e.id,100);
+  document.getElementById('b-player-sprite').innerHTML=getCreatureSVG(p.id,85);
+  // Move buttons
+  const moves=p.moves;
+  ['basic','negative','ultimate','domain'].forEach((t2,i)=>{
+    const btn=document.getElementById('mv'+i);
+    const m=moves[i];
+    if(!m) return;
+    btn.querySelector('.mv-name').textContent=m.name;
+    btn.querySelector('.mv-type').textContent=m.type.toUpperCase()+(m.power>0?' · '+m.power+' PWR':' · PASSIVE');
+    if(t2==='domain'){
+      const locked=BS.domainUsed||(p.status&&p.status.type==='lock');
+      btn.classList.toggle('used',locked);
+      if(locked) btn.querySelector('.mv-name').textContent=BS.domainUsed?'[ EXHAUSTED ]':'[ LOCKED ]';
+    }
+  });
+  // Sub-buttons
+  document.getElementById('catch-btn').disabled=(BS.items&&BS.items.done)||!BS.active;
+  document.getElementById('run-btn').disabled=!BS.active;
+}
+
+function renderStatusBadge(elId,status){
+  const el=document.getElementById(elId);
+  if(!status||status.turns<=0){el.innerHTML='';return;}
+  const labels={stun:'⚡ STUNNED',drain:'🔻 DRAINED',lock:'🔒 LOCKED'};
+  const cls={stun:'status-stun',drain:'status-drain',lock:'status-lock'};
+  el.innerHTML=`<span class="status-badge ${cls[status.type]||''}">${labels[status.type]||status.type} (${status.turns})</span>`;
+}
+
+const LOG_LINES=[];
+function logBattle(msg,cls=''){
+  LOG_LINES.push({msg,cls});
+  if(LOG_LINES.length>3) LOG_LINES.shift();
+  const log=document.getElementById('combat-log');
+  log.innerHTML='';
+  LOG_LINES.forEach((l,i)=>{
+    const s=document.createElement('span');
+    s.className='log-line'+(i<LOG_LINES.length-1?' old':'')+(l.cls?' '+l.cls:'');
+    s.textContent=l.msg;
+    log.appendChild(s);
+  });
+}
+
+function calcDamage(power,styleMeter,isPlayer,attackerStats,defStats){
+  if(power<=0) return 0;
+  let base=power*(0.82+Math.random()*0.36);
+  if(isPlayer&&styleMeter>=60) base*=1.25;
+  if(isPlayer&&styleMeter>=80) base*=1.15;
+  // tiny stat modifier
+  if(attackerStats&&defStats){
+    const atkMod=((attackerStats.POW||70)/70);
+    base*=atkMod*0.6+0.4;
+  }
+  return Math.max(1,Math.floor(base));
+}
+
+function applyStatus(target,statusDef){
+  if(!statusDef) return;
+  if(Math.random()*100 < statusDef.chance){
+    // self-buffs go to player, else to target
+    target.status={type:statusDef.type,turns:2};
+    return true;
+  }
+  return false;
+}
+
+function tickStatus(entity,name){
+  if(!entity.status) return false;
+  entity.status.turns--;
+  if(entity.status.turns<=0){entity.status=null;return false;}
+  return true;
+}
+
+function playerMove(idx){
+  if(!BS||!BS.active||BS.turn!=='player') return;
+  const move=BS.player.moves[idx];
+  if(!move) return;
+  // Check stun
+  if(BS.player.status&&BS.player.status.type==='stun'){
+    logBattle(`▸ ${BS.player.name} is stunned! Cannot move!`,'danger');
+    tickStatus(BS.player,'player');
+    updateBattleUI();
+    setMoveBtnsDisabled(true);
+    setTimeout(()=>{BS.turn='player';setMoveBtnsDisabled(false);updateBattleUI();},900);
+    // Actually enemy still gets to go
+    setTimeout(()=>enemyTurn(),950);
+    return;
+  }
+  if(move.type==='domain'){
+    const locked=BS.domainUsed||(BS.player.status&&BS.player.status.type==='lock');
+    if(locked) return;
+  }
+  setMoveBtnsDisabled(true);
+  // Drain status: halve power
+  let effectivePower=move.power;
+  if(BS.player.status&&BS.player.status.type==='drain') effectivePower=Math.ceil(effectivePower*0.55);
+  tickStatus(BS.player,'player');
+
+  if(move.type==='domain'){
+    BS.domainUsed=true;
+    triggerDomain(move,true,()=>{
+      const dmg=calcDamage(effectivePower,BS.styleMeter,true,BS.player.stats,BS.enemy.stats);
+      BS.enemy.hp=Math.max(0,BS.enemy.hp-dmg);
+      BS.styleMeter=Math.min(100,BS.styleMeter+25);
+      if(move.status) applyStatus(BS.enemy,move.status);
+      logBattle(`✦ DOMAIN: ${move.name}! Dealt ${dmg} DMG!`,'domain');
+      updateBattleUI();
+      shakeSprite('b-enemy-sprite');
+      checkBattleEnd(()=>setTimeout(()=>enemyTurn(),900));
+    });
+    return;
+  }
+
+  const dmg=calcDamage(effectivePower,BS.styleMeter,true,BS.player.stats,BS.enemy.stats);
+  BS.enemy.hp=Math.max(0,BS.enemy.hp-dmg);
+  const styleGain=move.type==='ultimate'?22:move.type==='negative'?11:6;
+  BS.styleMeter=Math.min(100,BS.styleMeter+styleGain);
+
+  let statusApplied='';
+  if(move.status&&move.status.target==='enemy'){
+    if(applyStatus(BS.enemy,move.status)) statusApplied=` [${move.status.type.toUpperCase()}]`;
+  }
+
+  const dmgLabel=move.type==='ultimate'?'highlight':'';
+  logBattle(`▸ ${BS.player.name} used ${move.name}! ${dmg} DMG${statusApplied}`,dmgLabel);
+  updateBattleUI();
+  shakeSprite('b-enemy-sprite');
+  checkBattleEnd(()=>setTimeout(()=>enemyTurn(),820));
+}
+
+function enemyTurn(){
+  if(!BS||!BS.active) return;
+  BS.turn='enemy';
+  // Check stun
+  if(BS.enemy.status&&BS.enemy.status.type==='stun'){
+    logBattle(`◂ ${BS.enemy.name} is stunned! Wasted turn.`,'status');
+    tickStatus(BS.enemy,'enemy');
+    updateBattleUI();
+    setTimeout(()=>{BS.turn='player';setMoveBtnsDisabled(false);updateBattleUI();},700);
+    return;
+  }
+  // Smart domain: use if HP < 35% and domain not used
+  let useMove;
+  const hpPct=BS.enemy.hp/BS.enemy.maxHP;
+  const allMoves=BS.enemy.moves;
+  const domainMove=allMoves[3];
+  if(hpPct<0.35&&!BS.enemyDomainUsed&&domainMove&&Math.random()<0.6){
+    useMove=domainMove;
+    BS.enemyDomainUsed=true;
+    triggerDomain(useMove,false,()=>{
+      const dmg=calcDamage(useMove.power,0,false,BS.enemy.stats,BS.player.stats);
+      BS.player.hp=Math.max(0,BS.player.hp-dmg);
+      BS.styleMeter=Math.max(0,BS.styleMeter-12);
+      logBattle(`◂ DOMAIN: ${BS.enemy.name}: ${useMove.name}! ${dmg} DMG!`,'domain');
+      updateBattleUI();
+      shakeSprite('b-player-sprite');
+      checkBattleEnd(()=>{BS.turn='player';setMoveBtnsDisabled(false);updateBattleUI();});
+    });
+    return;
+  }
+  // Pick valid move (exclude passive power=0, exclude domain if used)
+  let validMoves=allMoves.filter((m,i)=>(i!==3||(i===3&&!BS.enemyDomainUsed))&&m.power>0);
+  if(validMoves.length===0) validMoves=allMoves.filter(m=>m.power>0);
+  if(validMoves.length===0){BS.turn='player';setMoveBtnsDisabled(false);return;}
+  useMove=validMoves[Math.floor(Math.random()*validMoves.length)];
+  let effectivePower=useMove.power;
+  if(BS.enemy.status&&BS.enemy.status.type==='drain') effectivePower=Math.ceil(effectivePower*0.55);
+  tickStatus(BS.enemy,'enemy');
+  const dmg=calcDamage(effectivePower,0,false,BS.enemy.stats,BS.player.stats);
+  BS.player.hp=Math.max(0,BS.player.hp-dmg);
+  BS.styleMeter=Math.max(0,BS.styleMeter-7);
+  // Apply enemy status effects
+  if(useMove.status&&useMove.status.target==='enemy') applyStatus(BS.player,useMove.status);
+  const cls=useMove.type==='domain'?'domain':'danger';
+  logBattle(`◂ ${BS.enemy.name}: ${useMove.name}! ${dmg} DMG.`,cls);
+  updateBattleUI();
+  shakeSprite('b-player-sprite');
+  checkBattleEnd(()=>{BS.turn='player';setMoveBtnsDisabled(false);updateBattleUI();});
+}
+
+function shakeSprite(elId){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  el.classList.remove('sprite-shake','sprite-flash');
+  void el.offsetWidth;
+  el.classList.add('sprite-shake');
+  setTimeout(()=>el.classList.remove('sprite-shake'),350);
+}
+
+function checkBattleEnd(cont){
+  if(BS.enemy.hp<=0){battleWin();return;}
+  if(BS.player.hp<=0){battleLose();return;}
+  cont();
+}
+
+function battleWin(){
+  BS.active=false;
+  G.wins++;
+  // Update lead HP
+  const lead=G.team[G.lead];
+  if(lead) lead.currentHP=BS.player.hp;
+  // XP reward based on enemy rank
+  const xpGain={F:20,D:40,C:65,B:95,A:150,S:250}[BS.enemy.rank]||50;
+  if(lead) addXP(lead,xpGain);
+  logBattle(`★ ${BS.enemy.name} defeated! +${xpGain} XP`,'highlight');
+  updateRank();
+  updateExploreHUD();
+  setTimeout(()=>{
+    showScreen('explore-screen');
+    showMsg('VICTORY',`${BS.enemy.name} defeated! Style: ${BS.styleMeter}%`);
+    BS=null; LOG_LINES.length=0;
+  },1400);
+}
+
+function addXP(teamSlot,amount){
+  if(!teamSlot) return;
+  teamSlot.xp=(teamSlot.xp||0)+amount;
+  const curLv=teamSlot.level||1;
+  if(curLv<5&&teamSlot.xp>=xpForLevel(curLv)){
+    teamSlot.level=curLv+1;
+    teamSlot.maxHP=creatureMaxHP(CREATURES[teamSlot.id].baseHP,teamSlot.level);
+    teamSlot.currentHP=Math.min(teamSlot.currentHP+30,teamSlot.maxHP);
+    showLevelUp(teamSlot.name,teamSlot.level);
+  }
+}
+
+function showLevelUp(name,lv){
+  const ov=document.getElementById('levelup-overlay');
+  document.getElementById('levelup-name').textContent=`${name} → Lv.${lv}`;
+  ov.classList.add('active');
+  setTimeout(()=>ov.classList.remove('active'),2200);
+}
+
+function battleLose(){
+  BS.active=false;
+  const lead=G.team[G.lead];
+  if(lead) lead.currentHP=0;
+  logBattle(`✗ ${BS.player.name} fainted! Retreating...`,'danger');
+  // Heal all fainted creatures to 15%
+  setTimeout(()=>{
+    showScreen('explore-screen');
+    G.team.forEach(c=>{if(c.currentHP<=0) c.currentHP=Math.floor(c.maxHP*0.15);});
+    showMsg('DEFEAT',`${BS.player.name} fainted! Retreating...`);
+    updateExploreHUD();
+    BS=null; LOG_LINES.length=0;
+  },1400);
+}
+
+function tryRun(){
+  if(!BS||!BS.active) return;
+  logBattle('◌ Got away safely!');
+  BS.active=false;
+  setTimeout(()=>{showScreen('explore-screen');BS=null;LOG_LINES.length=0;},700);
+}
+
+function tryCatch(){
+  if(!BS||!BS.active) return;
+  if(G.items.frameCatchers<=0){logBattle('✗ No Frame Catchers left!','danger');return;}
+  showScreen('capture-screen');
+}
+
+function setMoveBtnsDisabled(dis){
+  for(let i=0;i<4;i++){
+    const b=document.getElementById('mv'+i);
+    if(!b) continue;
+    if(dis){b.classList.add('disabled');}
+    else{
+      b.classList.remove('disabled');
+      if(i===3&&(BS&&(BS.domainUsed||(BS.player&&BS.player.status&&BS.player.status.type==='lock')))){
+        b.classList.add('used');
+      }
+    }
+  }
+}
+
+function triggerDomain(move,isPlayer,callback){
+  const ov=document.getElementById('domain-overlay');
+  document.getElementById('domain-name-text').textContent=move.name;
+  document.getElementById('domain-sub-text').textContent=isPlayer?'YOUR DOMAIN':'ENEMY DOMAIN';
+  ov.classList.add('active');
+  setTimeout(()=>{ov.classList.remove('active');callback();},2100);
+}
+
+// ---- CAPTURE ----
+let catchState={};
+function showCaptureScreen(){
+  if(!BS) return;
+  const e=BS.enemy;
+  const hpPct=e.hp/e.maxHP;
+  document.getElementById('cap-title').textContent='DEPLOY FRAME CATCHER';
+  document.getElementById('cap-sub').textContent=`Target: ${e.name} [${e.rank}] — HP: ${Math.floor(hpPct*100)}%`;
+  document.getElementById('cap-result').textContent='';
+  document.getElementById('cap-result').className='capture-result';
+  document.getElementById('cap-btn').style.display='block';
+  catchState={enemy:e,hpPct,done:false};
+}
+
+function executeCatch(){
+  if(catchState.done) return;
+  catchState.done=true;
+  document.getElementById('cap-btn').style.display='none';
+  if(G.items.frameCatchers<=0){
+    document.getElementById('cap-result').textContent='NO CATCHERS';
+    document.getElementById('cap-result').className='capture-result fail';
+    setTimeout(()=>{showScreen('battle-screen');updateBattleUI();},1400);
+    return;
+  }
+  G.items.frameCatchers--;
+  const e=catchState.enemy;
+  const baseRate=CREATURES[e.id]?.captureRate||50;
+  const hpBonus=(1-catchState.hpPct)*42;
+  const roll=Math.random()*100;
+  if(roll<baseRate+hpBonus){
+    document.getElementById('cap-result').textContent='CAPTURED!';
+    document.getElementById('cap-result').className='capture-result success';
+    G.dex[e.id]=true;
+    G.captures++;
+    if(G.team.length<6){
+      const c=CREATURES[e.id];
+      G.team.push({id:e.id,name:c.name,currentHP:Math.max(1,e.hp),maxHP:c.baseHP,level:1,xp:0,status:null});
+    }
+    updateRank();updateExploreHUD();
+    notify('CAPTURED: '+e.name);
+    BS.active=false;
+    setTimeout(()=>{showScreen('explore-screen');BS=null;LOG_LINES.length=0;},1800);
+  } else {
+    document.getElementById('cap-result').textContent='BROKE FREE!';
+    document.getElementById('cap-result').className='capture-result fail';
+    setTimeout(()=>{
+      showScreen('battle-screen');
+      updateBattleUI();
+      if(BS&&BS.active) enemyTurn();
+    },1500);
+  }
+}
+
+// ---- RANK ----
+function updateRank(){
+  const score=G.captures+Math.floor(G.wins/2);
+  let r='F';
+  if(score>=40) r='S';
+  else if(score>=25) r='A';
+  else if(score>=15) r='B';
+  else if(score>=8) r='C';
+  else if(score>=3) r='D';
+  if(r!==G.rank){G.rank=r;notify('RANK UP: '+r);}
+  document.getElementById('hud-rank').textContent='RANK: '+G.rank;
+}
+
+function updateExploreHUD(){
+  document.getElementById('hud-captures').textContent='CAPTURES: '+G.captures;
+  document.getElementById('hud-wins').textContent='WINS: '+G.wins;
+  document.getElementById('hud-catchers').textContent='🎯 CATCHERS: '+G.items.frameCatchers;
+  // Team HP mini-bars
+  const htDiv=document.getElementById('hud-team');
+  htDiv.innerHTML='';
+  G.team.forEach(c=>{
+    const slot=document.createElement('div');
+    slot.className='hud-team-slot';
+    const fill=document.createElement('div');
+    const pct=c.currentHP/c.maxHP;
+    fill.className='hud-team-fill'+(pct<0.3?' low':'');
+    fill.style.width=Math.max(0,pct*100)+'%';
+    slot.appendChild(fill);htDiv.appendChild(slot);
+  });
+}
+
+// ---- SVG SPRITES ----
+function getCreatureSVG(id,size=80){
+  const s=size;
+  const sprites={
+    lightning_beast:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="55" rx="20" ry="8" fill="#001a1a" opacity=".45"/>
+      <path d="M40 8 L52 32 L44 32 L56 60 L36 38 L46 38 Z" fill="#ffe000" stroke="#00ffff" stroke-width="1.5"/>
+      <circle cx="40" cy="30" r="12" fill="#0a1a3a" stroke="#00ffff" stroke-width="2"/>
+      <circle cx="36" cy="27" r="3" fill="#00ffff"/><circle cx="44" cy="27" r="3" fill="#00ffff"/>
+      <line x1="40" y1="18" x2="34" y2="12" stroke="#ffe000" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="40" y1="18" x2="46" y2="12" stroke="#ffe000" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M28 42 Q20 50 22 58 Q30 62 40 62 Q50 62 58 58 Q60 50 52 42" fill="#0a1a3a" stroke="#00ffff" stroke-width="1.5"/>
+      <path d="M30 52 L34 58 L40 50 L46 58 L50 52" stroke="#ffe000" stroke-width="1" fill="none"/>
+    </svg>`,
+    slime_entity:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="56" rx="24" ry="6" fill="#001508" opacity=".45"/>
+      <ellipse cx="40" cy="46" rx="22" ry="18" fill="#00aa3355" stroke="#00ff88" stroke-width="1.5"/>
+      <ellipse cx="40" cy="42" rx="18" ry="16" fill="#00882244"/>
+      <circle cx="34" cy="38" r="4" fill="#00ff88" opacity=".6"/><circle cx="46" cy="38" r="4" fill="#00ff88" opacity=".6"/>
+      <circle cx="33" cy="37" r="1.5" fill="#fff"/><circle cx="45" cy="37" r="1.5" fill="#fff"/>
+      <path d="M36 44 Q40 48 44 44" stroke="#00ff88" stroke-width="1.5" fill="none"/>
+      <circle cx="26" cy="36" r="5" fill="#00aa3344" stroke="#00ff8866"/>
+      <circle cx="54" cy="36" r="5" fill="#00aa3344" stroke="#00ff8866"/>
+      <circle cx="40" cy="22" r="6" fill="#00aa3344" stroke="#00ff8866"/>
+    </svg>`,
+    frame_freeze:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="56" rx="18" ry="5" fill="#000" opacity=".35"/>
+      <rect x="34" y="40" width="12" height="22" rx="3" fill="#1a0030" stroke="#8800ff" stroke-width="1.5"/>
+      <rect x="28" y="28" width="24" height="18" rx="4" fill="#1a0030" stroke="#8800ff" stroke-width="2"/>
+      <circle cx="36" cy="35" r="3" fill="#8800ff"/><circle cx="44" cy="35" r="3" fill="#8800ff"/>
+      <rect x="32" y="22" width="16" height="8" rx="3" fill="#0a0018" stroke="#cc00ff" stroke-width="1"/>
+      <line x1="40" y1="22" x2="40" y2="16" stroke="#cc00ff" stroke-width="2"/>
+      <line x1="40" y1="16" x2="34" y2="10" stroke="#8800ff" stroke-width="1.5"/>
+      <line x1="40" y1="16" x2="46" y2="10" stroke="#8800ff" stroke-width="1.5"/>
+      <line x1="26" y1="44" x2="18" y2="42" stroke="#8800ff" stroke-width="1.5"/>
+      <line x1="54" y1="44" x2="62" y2="42" stroke="#8800ff" stroke-width="1.5"/>
+      <rect x="10" y="30" width="60" height="2" fill="#8800ff" opacity=".25" rx="1"/>
+      <rect x="10" y="42" width="60" height="2" fill="#8800ff" opacity=".25" rx="1"/>
+    </svg>`,
+    core_breaker:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="56" rx="18" ry="5" fill="#100800" opacity=".45"/>
+      <rect x="28" y="32" width="24" height="26" rx="4" fill="#1a1000" stroke="#ff6600" stroke-width="2"/>
+      <circle cx="40" cy="42" r="8" fill="#0a0800" stroke="#ff9900" stroke-width="2"/>
+      <circle cx="40" cy="42" r="4" fill="#ff6600" opacity=".8"/><circle cx="40" cy="42" r="2" fill="#fff" opacity=".9"/>
+      <rect x="32" y="22" width="16" height="12" rx="3" fill="#1a1000" stroke="#ff6600" stroke-width="1.5"/>
+      <circle cx="40" cy="26" r="3" fill="#ff9900" opacity=".7"/>
+      <line x1="28" y1="44" x2="18" y2="40" stroke="#ff6600" stroke-width="2"/>
+      <line x1="52" y1="44" x2="62" y2="40" stroke="#ff6600" stroke-width="2"/>
+      <rect x="30" y="56" width="8" height="10" rx="2" fill="#1a1000" stroke="#ff660066"/>
+      <rect x="42" y="56" width="8" height="10" rx="2" fill="#1a1000" stroke="#ff660066"/>
+    </svg>`,
+    mirror_regiment:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="56" rx="18" ry="5" fill="#111" opacity=".35"/>
+      <rect x="32" y="36" width="16" height="22" rx="3" fill="#1a1a20" stroke="#aaaaaa" stroke-width="1.5"/>
+      <circle cx="40" cy="28" r="10" fill="#1a1a20" stroke="#aaaaaa" stroke-width="2"/>
+      <circle cx="36" cy="26" r="2.5" fill="#fff" opacity=".9"/><circle cx="44" cy="26" r="2.5" fill="#fff" opacity=".9"/>
+      <path d="M36 32 Q40 35 44 32" stroke="#aaa" stroke-width="1" fill="none"/>
+      <line x1="32" y1="44" x2="22" y2="48" stroke="#aaa" stroke-width="2"/>
+      <line x1="48" y1="44" x2="58" y2="48" stroke="#aaa" stroke-width="2"/>
+      <rect x="25" y="42" width="8" height="3" rx="1" fill="#555"/>
+      <rect x="47" y="42" width="8" height="3" rx="1" fill="#555"/>
+      <line x1="34" y1="58" x2="28" y2="66" stroke="#aaa" stroke-width="2"/>
+      <line x1="46" y1="58" x2="52" y2="66" stroke="#aaa" stroke-width="2"/>
+    </svg>`,
+    kwaku_copycat:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="58" rx="20" ry="6" fill="#001a08" opacity=".45"/>
+      <rect x="30" y="36" width="20" height="24" rx="3" fill="#0a1a10" stroke="#00ff88" stroke-width="1.5"/>
+      <circle cx="40" cy="26" r="12" fill="#0a1a10" stroke="#00ff88" stroke-width="2"/>
+      <circle cx="35" cy="24" r="3" fill="#00ff88" opacity=".85"/><circle cx="45" cy="24" r="3" fill="#00ff88" opacity=".85"/>
+      <circle cx="35" cy="24" r="1.5" fill="#fff"/><circle cx="45" cy="24" r="1.5" fill="#fff"/>
+      <path d="M35 31 Q40 34 45 31" stroke="#00ff88" stroke-width="1.5" fill="none"/>
+      <!-- Gugle symbiote marks -->
+      <circle cx="40" cy="16" r="4" fill="#005522" stroke="#00ff44" stroke-width="1"/>
+      <line x1="38" y1="16" x2="42" y2="16" stroke="#00ff44" stroke-width="1.5"/>
+      <line x1="40" y1="14" x2="40" y2="18" stroke="#00ff44" stroke-width="1.5"/>
+      <line x1="30" y1="44" x2="18" y2="42" stroke="#00ff88" stroke-width="2"/>
+      <line x1="50" y1="44" x2="62" y2="42" stroke="#00ff88" stroke-width="2"/>
+      <line x1="34" y1="60" x2="28" y2="70" stroke="#00ff88" stroke-width="2"/>
+      <line x1="46" y1="60" x2="52" y2="70" stroke="#00ff88" stroke-width="2"/>
+      <!-- copy symbol -->
+      <rect x="35" y="44" width="10" height="8" rx="1" fill="none" stroke="#00ff4466" stroke-width="1"/>
+      <rect x="37" y="46" width="10" height="8" rx="1" fill="none" stroke="#00ff4444" stroke-width="1"/>
+    </svg>`,
+    music_man:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="60" rx="20" ry="6" fill="#0a001a" opacity=".45"/>
+      <rect x="30" y="36" width="20" height="26" rx="3" fill="#0a0018" stroke="#cc44ff" stroke-width="1.5"/>
+      <circle cx="40" cy="26" r="12" fill="#0a0018" stroke="#cc44ff" stroke-width="2"/>
+      <circle cx="35" cy="24" r="3" fill="#cc44ff" opacity=".85"/><circle cx="45" cy="24" r="3" fill="#cc44ff" opacity=".85"/>
+      <!-- Musical notes -->
+      <text x="14" y="32" fill="#ff44cc" font-size="10" font-family="serif">♩</text>
+      <text x="56" y="28" fill="#cc44ff" font-size="8" font-family="serif">♪</text>
+      <text x="20" y="48" fill="#8844ff" font-size="8" font-family="serif">♫</text>
+      <text x="52" y="48" fill="#ff44aa" font-size="10" font-family="serif">♬</text>
+      <!-- headphones -->
+      <path d="M28 24 Q28 10 40 10 Q52 10 52 24" fill="none" stroke="#cc44ff" stroke-width="2"/>
+      <rect x="24" y="24" width="7" height="10" rx="3" fill="#330044" stroke="#cc44ff" stroke-width="1.5"/>
+      <rect x="49" y="24" width="7" height="10" rx="3" fill="#330044" stroke="#cc44ff" stroke-width="1.5"/>
+      <line x1="30" y1="46" x2="18" y2="52" stroke="#cc44ff" stroke-width="2"/>
+      <line x1="50" y1="46" x2="62" y2="52" stroke="#cc44ff" stroke-width="2"/>
+      <line x1="34" y1="62" x2="28" y2="70" stroke="#cc44ff" stroke-width="2"/>
+      <line x1="46" y1="62" x2="52" y2="70" stroke="#cc44ff" stroke-width="2"/>
+    </svg>`,
+    achilles_grapple:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="62" rx="22" ry="6" fill="#000" opacity=".4"/>
+      <!-- Body: void entity -->
+      <circle cx="40" cy="36" r="26" fill="#050508" stroke="#444" stroke-width="1" opacity=".3"/>
+      <circle cx="40" cy="36" r="20" fill="#030304" stroke="#6666aa" stroke-width="1.5"/>
+      <circle cx="40" cy="36" r="13" fill="#020203" stroke="#4444aa" stroke-width="1"/>
+      <!-- Infinite symbol -->
+      <path d="M28 36 Q32 29 36 36 Q40 43 44 36 Q48 29 52 36" fill="none" stroke="#8888ff" stroke-width="2"/>
+      <!-- Two points -->
+      <circle cx="28" cy="36" r="3" fill="#ff4444"/>
+      <circle cx="52" cy="36" r="3" fill="#4444ff"/>
+      <!-- Speed zero lines radiating out -->
+      <line x1="20" y1="16" x2="26" y2="26" stroke="#6666aa" stroke-width="1" stroke-dasharray="2 2"/>
+      <line x1="60" y1="16" x2="54" y2="26" stroke="#6666aa" stroke-width="1" stroke-dasharray="2 2"/>
+      <line x1="40" y1="10" x2="40" y2="22" stroke="#8888ff" stroke-width="1" stroke-dasharray="2 2"/>
+      <line x1="40" y1="62" x2="40" y2="72" stroke="#6666aa" stroke-width="1.5"/>
+    </svg>`,
+    mr_sandman:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="60" rx="20" ry="6" fill="#000" opacity=".55"/>
+      <rect x="22" y="30" width="36" height="32" rx="3" fill="#2a1a08" stroke="#664422" stroke-width="1.5"/>
+      <ellipse cx="40" cy="28" rx="16" ry="14" fill="#1a1008" stroke="#553311" stroke-width="2"/>
+      <rect x="24" y="14" width="32" height="10" rx="3" fill="#3a2210" stroke="#664422" stroke-width="1"/>
+      <rect x="16" y="20" width="48" height="4" rx="2" fill="#3a2210" stroke="#664422" stroke-width="1"/>
+      <rect x="28" y="24" width="24" height="6" rx="1" fill="#080500"/>
+      <line x1="32" y1="26" x2="36" y2="26" stroke="#ff2244" stroke-width="1"/>
+      <line x1="40" y1="26" x2="44" y2="26" stroke="#ff2244" stroke-width="1"/>
+      <circle cx="34" cy="27" r="1" fill="#ff2244" opacity=".6"/>
+      <circle cx="46" cy="27" r="1" fill="#ff2244" opacity=".6"/>
+      <path d="M34 32 Q40 36 46 32" stroke="#553311" stroke-width="1" fill="none"/>
+      <line x1="22" y1="44" x2="8" y2="48" stroke="#3a2210" stroke-width="3"/>
+      <line x1="58" y1="44" x2="72" y2="48" stroke="#3a2210" stroke-width="3"/>
+      <line x1="30" y1="62" x2="24" y2="72" stroke="#3a2210" stroke-width="3"/>
+      <line x1="50" y1="62" x2="56" y2="72" stroke="#3a2210" stroke-width="3"/>
+    </svg>`,
+    frame_walker:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="62" rx="18" ry="5" fill="#000" opacity=".5"/>
+      <rect x="26" y="32" width="28" height="30" rx="2" fill="#080018" stroke="#cc00ff" stroke-width="1" opacity=".8"/>
+      <rect x="27" y="33" width="26" height="28" rx="2" fill="none" stroke="#8800ff" stroke-width="2" stroke-dasharray="4 2"/>
+      <ellipse cx="40" cy="26" rx="12" ry="12" fill="#080018" stroke="#cc00ff" stroke-width="2"/>
+      <line x1="34" y1="24" x2="46" y2="28" stroke="#ff00ff" stroke-width="2" opacity=".8"/>
+      <circle cx="34" cy="24" r="3" fill="#ff00ff" opacity=".7"/>
+      <circle cx="46" cy="24" r="3" fill="#ff00ff" opacity=".7"/>
+      <line x1="26" y1="46" x2="8" y2="38" stroke="#8800ff" stroke-width="2" stroke-dasharray="3 2"/>
+      <line x1="54" y1="46" x2="72" y2="38" stroke="#8800ff" stroke-width="2" stroke-dasharray="3 2"/>
+      <line x1="32" y1="62" x2="24" y2="72" stroke="#8800ff" stroke-width="2" stroke-dasharray="3 2"/>
+      <line x1="48" y1="62" x2="56" y2="72" stroke="#8800ff" stroke-width="2" stroke-dasharray="3 2"/>
+      <text x="40" y="50" fill="#cc00ff" font-size="7" text-anchor="middle" font-family="monospace" opacity=".8">SCP-000-F</text>
+    </svg>`,
+    ledger_warden:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="62" rx="18" ry="5" fill="#000" opacity=".4"/>
+      <rect x="28" y="30" width="24" height="32" rx="2" fill="#080810" stroke="#6666ff" stroke-width="1.5" opacity=".85"/>
+      <ellipse cx="40" cy="24" rx="14" ry="13" fill="#050510" stroke="#6666ff" stroke-width="2"/>
+      <rect x="36" y="14" width="8" height="14" rx="2" fill="#0a0a18" stroke="#4444aa"/>
+      <path d="M36 14 Q40 8 44 14" fill="#0a0a18" stroke="#6666ff" stroke-width="1.5"/>
+      <circle cx="35" cy="22" r="2.5" fill="#6666ff" opacity=".8"/>
+      <circle cx="45" cy="22" r="2.5" fill="#6666ff" opacity=".8"/>
+      <path d="M35 28 Q40 30 45 28" stroke="#6666ff" stroke-width="1" fill="none"/>
+      <rect x="33" y="38" width="14" height="16" rx="2" fill="#0a0a18" stroke="#4444aa" stroke-width="1"/>
+      <line x1="35" y1="41" x2="45" y2="41" stroke="#6666ff" stroke-width=".8"/>
+      <line x1="35" y1="44" x2="45" y2="44" stroke="#6666ff" stroke-width=".8"/>
+      <line x1="35" y1="47" x2="42" y2="47" stroke="#6666ff" stroke-width=".8"/>
+      <line x1="28" y1="44" x2="14" y2="48" stroke="#6666ff" stroke-width="2"/>
+      <line x1="52" y1="44" x2="66" y2="48" stroke="#6666ff" stroke-width="2"/>
+      <line x1="32" y1="62" x2="26" y2="72" stroke="#6666ff" stroke-width="2"/>
+      <line x1="48" y1="62" x2="54" y2="72" stroke="#6666ff" stroke-width="2"/>
+    </svg>`,
+    silent_time:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="62" rx="22" ry="6" fill="#000" opacity=".5"/>
+      <circle cx="40" cy="36" r="26" fill="#000" stroke="#333" stroke-width="1" opacity=".2"/>
+      <circle cx="40" cy="36" r="20" fill="#050508" stroke="#333" stroke-width="2"/>
+      <circle cx="40" cy="36" r="14" fill="#030304" stroke="#222" stroke-width="1"/>
+      <circle cx="40" cy="36" r="6" fill="#000" stroke="#111" stroke-width="1"/>
+      <line x1="40" y1="16" x2="40" y2="22" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+      <line x1="40" y1="50" x2="40" y2="56" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+      <line x1="20" y1="36" x2="26" y2="36" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+      <line x1="54" y1="36" x2="60" y2="36" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+      <line x1="40" y1="36" x2="40" y2="24" stroke="#aaa" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="40" y1="36" x2="50" y2="36" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="40" cy="36" r="2" fill="#fff" opacity=".3"/>
+      <line x1="20" y1="20" x2="26" y2="26" stroke="#ff2244" stroke-width="2" stroke-linecap="round"/>
+      <line x1="60" y1="20" x2="54" y2="26" stroke="#ff2244" stroke-width="2" stroke-linecap="round"/>
+    </svg>`,
+    blackout_leviathan:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="65" rx="22" ry="6" fill="#100000" opacity=".5"/>
+      <path d="M10 40 Q20 20 40 18 Q60 20 70 40 Q60 55 40 58 Q20 55 10 40Z" fill="#1a0000" stroke="#ff2244" stroke-width="2" opacity=".9"/>
+      <circle cx="30" cy="34" r="5" fill="#0a0000" stroke="#ff2244" stroke-width="1.5"/>
+      <circle cx="50" cy="34" r="5" fill="#0a0000" stroke="#ff2244" stroke-width="1.5"/>
+      <circle cx="29" cy="33" r="2" fill="#ff0000"/><circle cx="49" cy="33" r="2" fill="#ff0000"/>
+      <path d="M32 44 Q40 50 48 44" stroke="#ff2244" stroke-width="2" fill="none"/>
+      <line x1="32" y1="44" x2="28" y2="50" stroke="#ff2244" stroke-width="1.5"/>
+      <line x1="44" y1="44" x2="44" y2="50" stroke="#ff2244" stroke-width="1.5"/>
+      <line x1="48" y1="44" x2="52" y2="50" stroke="#ff2244" stroke-width="1.5"/>
+      <path d="M40 18 Q50 8 62 12 Q58 22 48 20" fill="#1a0000" stroke="#ff2244" stroke-width="1"/>
+      <path d="M40 18 Q30 8 18 12 Q22 22 32 20" fill="#1a0000" stroke="#ff2244" stroke-width="1"/>
+      <line x1="70" y1="36" x2="78" y2="30" stroke="#ff2244" stroke-width="2"/>
+      <line x1="70" y1="40" x2="78" y2="40" stroke="#ff2244" stroke-width="2"/>
+      <line x1="70" y1="44" x2="78" y2="48" stroke="#ff2244" stroke-width="2"/>
+    </svg>`,
+    skybreaker_colossus:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="70" rx="24" ry="6" fill="#100000" opacity=".5"/>
+      <rect x="26" y="42" width="28" height="28" rx="2" fill="#150000" stroke="#ff4400" stroke-width="2"/>
+      <rect x="30" y="26" width="20" height="18" rx="2" fill="#150000" stroke="#ff4400" stroke-width="2"/>
+      <rect x="34" y="16" width="12" height="12" rx="2" fill="#0a0000" stroke="#ff6600" stroke-width="2"/>
+      <circle cx="37" cy="22" r="2" fill="#ff4400"/><circle cx="43" cy="22" r="2" fill="#ff4400"/>
+      <rect x="14" y="36" width="14" height="10" rx="2" fill="#150000" stroke="#ff4400" stroke-width="1.5"/>
+      <rect x="52" y="36" width="14" height="10" rx="2" fill="#150000" stroke="#ff4400" stroke-width="1.5"/>
+      <rect x="8" y="40" width="10" height="4" rx="1" fill="#ff440033"/>
+      <rect x="62" y="40" width="10" height="4" rx="1" fill="#ff440033"/>
+      <rect x="30" y="70" width="8" height="10" rx="2" fill="#150000" stroke="#ff440066"/>
+      <rect x="42" y="70" width="8" height="10" rx="2" fill="#150000" stroke="#ff440066"/>
+      <path d="M26 42 L18 30 L28 32" fill="#ff440033" stroke="#ff440066"/>
+      <path d="M54 42 L62 30 L52 32" fill="#ff440033" stroke="#ff440066"/>
+    </svg>`,
+    gugle_parasite:`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="60" rx="18" ry="5" fill="#001a00" opacity=".4"/>
+      <ellipse cx="40" cy="44" rx="18" ry="20" fill="#003300" stroke="#00ff44" stroke-width="1.5" opacity=".9"/>
+      <circle cx="34" cy="34" r="4" fill="#004400" stroke="#00ff44" stroke-width="1"/>
+      <circle cx="46" cy="34" r="4" fill="#004400" stroke="#00ff44" stroke-width="1"/>
+      <circle cx="33" cy="33" r="1.5" fill="#00ff44"/><circle cx="45" cy="33" r="1.5" fill="#00ff44"/>
+      <path d="M34 42 Q40 47 46 42" stroke="#00ff44" stroke-width="1.5" fill="none"/>
+      <line x1="30" y1="28" x2="24" y2="20" stroke="#00ff44" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="50" y1="28" x2="56" y2="20" stroke="#00ff44" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="40" y1="26" x2="40" y2="18" stroke="#00ff44" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="22" y1="44" x2="12" y2="46" stroke="#00ff44" stroke-width="1.5"/>
+      <line x1="58" y1="44" x2="68" y2="46" stroke="#00ff44" stroke-width="1.5"/>
+      <line x1="34" y1="62" x2="28" y2="70" stroke="#00ff44" stroke-width="1.5"/>
+      <line x1="46" y1="62" x2="52" y2="70" stroke="#00ff44" stroke-width="1.5"/>
+    </svg>`
+  };
+  return sprites[id]||`<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="28" fill="#0a0a1a" stroke="#333" stroke-width="2"/><text x="40" y="44" fill="#444" font-size="10" text-anchor="middle">???</text></svg>`;
+}
+
+// ---- UI HELPERS ----
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const scr=document.getElementById(id);
+  if(scr) scr.classList.add('active');
+  if(id==='capture-screen') showCaptureScreen();
+  if(id==='battle-screen'&&BS) updateBattleUI();
+  if(id==='explore-screen'){updateExploreHUD();initCanvas();}
+}
+function showMsg(title,text){
+  const mb=document.getElementById('msg-box');
+  document.getElementById('msg-title').textContent=title;
+  document.getElementById('msg-text').textContent=text;
+  mb.classList.add('visible');
+  clearTimeout(mb._t);
+  mb._t=setTimeout(hideMsg,3200);
+}
+function hideMsg(){document.getElementById('msg-box').classList.remove('visible');}
+function notify(msg){
+  const n=document.getElementById('notif');
+  n.textContent=msg;
+  n.classList.add('show');
+  clearTimeout(n._t);
+  n._t=setTimeout(()=>n.classList.remove('show'),2600);
+}
+function closeOverlay(id){document.getElementById(id).classList.remove('active');}
+
+// ---- TEAM OVERLAY ----
+function showTeam(){
+  const grid=document.getElementById('team-grid');
+  grid.innerHTML='';
+  for(let i=0;i<6;i++){
+    const slot=document.createElement('div');
+    const c=G.team[i];
+    slot.className='team-slot'+(c?'':" empty")+(i===G.lead?' active-lead':'')+(c&&c.currentHP<=0?' fainted':'');
+    if(c){
+      const cr=CREATURES[c.id];
+      const lv=c.level||1;
+      const xpNeed=xpForLevel(lv)-xpForLevel(lv-1);
+      const xpHave=Math.max(0,(c.xp||0)-xpForLevel(lv-1));
+      slot.innerHTML=`<div class="ts-sprite">${getCreatureSVG(c.id,48)}</div>
+        <div class="ts-name">${c.name}</div>
+        <div class="ts-rank rank-${cr?.rank||'F'}">${cr?.rank||'?'}</div>
+        <div class="ts-level">Lv.${lv}</div>
+        <div class="ts-hp">${c.currentHP}/${c.maxHP} HP</div>
+        <div class="ts-hp-bar"><div class="ts-hp-fill" style="width:${Math.max(0,c.currentHP/c.maxHP*100)}%"></div></div>
+        <div class="ts-xp-bar"><div class="ts-xp-fill" style="width:${Math.min(100,xpHave/xpNeed*100)}%"></div></div>`;
+      slot.onclick=()=>{if(c.currentHP>0){G.lead=i;showTeam();}};
+    } else {
+      slot.innerHTML='<div style="color:#224;font-size:10px;text-align:center;">Empty Slot</div>';
+    }
+    grid.appendChild(slot);
+  }
+  document.getElementById('team-overlay').classList.add('active');
+}
+
+// ---- DEX ----
+function showDex(){
+  const list=document.getElementById('dex-list');
+  list.innerHTML='';
+  Object.values(CREATURES).forEach(c=>{
+    const caught=!!G.dex[c.id];
+    const entry=document.createElement('div');
+    entry.className='dex-entry'+(caught?' caught':'');
+    entry.innerHTML=`<div class="dex-sprite">${getCreatureSVG(c.id,38)}</div>
+      <div class="dex-info">
+        <div class="dex-name">${caught?c.name:'???'}</div>
+        <div class="dex-sub">${caught?c.type+' · '+(REGIONS[c.region]?.name||c.region):'Undiscovered'}</div>
+      </div>
+      <div class="dex-rank-badge rank-${c.rank}">${c.rank}</div>`;
+    if(caught){
+      const detail=document.createElement('div');
+      detail.className='dex-detail';
+      detail.innerHTML=`<div class="dd-lore">${c.lore}</div>
+        <div class="dd-moves">${c.moves.map(m=>`<div class="dd-move"><span class="dd-move-name">${m.name} [${m.power} PWR]</span><span class="dd-move-desc">${m.desc}</span></div>`).join('')}</div>
+        <div class="dd-stats">${Object.entries(c.stats).map(([k,v])=>`<span class="dd-stat">${k}:${v}</span>`).join('')}</div>`;
+      entry.appendChild(detail);
+      entry.onclick=()=>detail.classList.toggle('open');
+    }
+    list.appendChild(entry);
+  });
+  document.getElementById('dex-overlay').classList.add('active');
+}
+
+// ---- SAVE / LOAD ----
+function saveGame(){
+  try{
+    localStorage.setItem('aw3_save',JSON.stringify({
+      clan:G.clan,playerX:G.playerX,playerY:G.playerY,
+      captures:G.captures,wins:G.wins,rank:G.rank,
+      team:G.team,lead:G.lead,dex:G.dex,items:G.items
+    }));
+    notify('GAME SAVED ✓');
+  }catch(e){notify('SAVE FAILED');}
+}
+function loadGame(){
+  try{
+    const s=localStorage.getItem('aw3_save');
+    if(!s) return false;
+    const d=JSON.parse(s);
+    Object.assign(G,{
+      clan:d.clan||'elemental',playerX:d.playerX||35,playerY:d.playerY||27,
+      captures:d.captures||0,wins:d.wins||0,rank:d.rank||'F',
+      team:d.team||[],lead:d.lead||0,dex:d.dex||{},
+      items:d.items||{frameCatchers:5}
+    });
+    return true;
+  }catch(e){return false;}
+}
+
+// ---- CONTROLS ----
+function setupControls(){
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W') G.moving.up=true;
+    else if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') G.moving.down=true;
+    else if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') G.moving.left=true;
+    else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') G.moving.right=true;
+    else if(e.key==='Escape') saveGame();
+    e.preventDefault();
+  });
+  document.addEventListener('keyup',e=>{
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W') G.moving.up=false;
+    else if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') G.moving.down=false;
+    else if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') G.moving.left=false;
+    else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') G.moving.right=false;
+  });
+  function dpadBind(id,dir){
+    const btn=document.getElementById(id);
+    if(!btn) return;
+    const set=v=>{Object.keys(G.moving).forEach(k=>G.moving[k]=false);if(v)G.moving[dir]=true;btn.classList.toggle('pressed',v);};
+    btn.addEventListener('touchstart',e=>{e.preventDefault();set(true);},{passive:false});
+    btn.addEventListener('touchend',e=>{e.preventDefault();set(false);},{passive:false});
+    btn.addEventListener('touchcancel',e=>{e.preventDefault();set(false);},{passive:false});
+    btn.addEventListener('mousedown',e=>{e.preventDefault();set(true);});
+    btn.addEventListener('mouseup',()=>set(false));
+    btn.addEventListener('mouseleave',()=>set(false));
+  }
+  dpadBind('btn-up','up');dpadBind('btn-down','down');
+  dpadBind('btn-left','left');dpadBind('btn-right','right');
+}
+
+// ---- CLAN SELECTION ----
+let selectedClan='elemental';
+function selectClan(el){
+  document.querySelectorAll('.clan-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedClan=el.dataset.clan;
+}
+
+const CLAN_STARTERS={
+  elemental:'lightning_beast',flint:'slime_entity',
+  acotw:'core_breaker',saeo:'kwaku_copycat',neydis:'frame_freeze'
+};
+
+function startGame(){
+  G.clan=selectedClan;
+  const sid=CLAN_STARTERS[selectedClan]||'lightning_beast';
+  const c=CREATURES[sid];
+  if(!G.team||G.team.length===0){
+    G.team=[{id:sid,name:c.name,currentHP:c.baseHP,maxHP:c.baseHP,level:1,xp:0,status:null}];
+    G.dex[sid]=true;
+  }
+  generateMap();
+  initCanvas();
+  setupControls();
+  showScreen('explore-screen');
+  updateRank();
+  updateExploreHUD();
+  gameLoop();
+  setTimeout(()=>showMsg('WELCOME',`Clan ${selectedClan.toUpperCase()} — ${c.name} Lv.1 ready! WASD/arrows or D-pad. Rest on PATH to heal.`),600);
+}
+
+// ---- INIT ----
+window.addEventListener('load',()=>{
+  loadGame();
+  window.addEventListener('resize',()=>{
+    if(canvas&&document.getElementById('explore-screen').classList.contains('active')){
+      const scr=document.getElementById('explore-screen');
+      canvas.width=scr.clientWidth||window.innerWidth;
+      canvas.height=scr.clientHeight||window.innerHeight;
+    }
+  });
+});
+</script>
+</body></html>
