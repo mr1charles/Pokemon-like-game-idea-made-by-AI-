@@ -196,6 +196,17 @@
     @keyframes glitchPulse {
       from { opacity: 0.35; transform: translate3d(0, 0, 0); }
       to { opacity: 0.9; transform: translate3d(1px, -1px, 0); }
+    .tile.player::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      background: radial-gradient(circle at 35% 35%, #fff, #59f0ff 35%, #0678ff 72%);
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 10px;
+      box-shadow: 0 0 0 4px rgba(89, 240, 255, 0.15), 0 0 18px rgba(89, 240, 255, 0.7);
+      z-index: 2;
     }
 
     #map-sidebar {
@@ -538,6 +549,7 @@
                   <li>Move with WASD / Arrow Keys / touch D-pad.</li>
                   <li>Search tiles for location-based encounters.</li>
                   <li>Capture weakened entities with Frame Shards or Frame Catchers.</li>
+                  <li>Capture weakened entities with Frame Catchers.</li>
                 </ul>
               </div>
               <div class="card">
@@ -578,6 +590,7 @@
                 <div class="subline" id="enemy-hp-text">100 / 100 HP</div>
               </div>
               <div class="sprite-box capture-target" id="enemy-sprite"><div class="capture-layer" id="capture-layer" aria-hidden="true"><div class="capture-shard"></div><div class="capture-flash"></div></div></div>
+              <div class="sprite-box" id="enemy-sprite"></div>
             </div>
 
             <div id="battle-status">
@@ -589,6 +602,8 @@
               <div id="capture-box">
                 <div class="section-head"><h3>Capture</h3><span class="badge" id="catcher-count">Shards: 1 • Catchers: 5</span></div>
                 <button class="action-btn primary" id="capture-btn">Use Frame Shard</button>
+                <div class="section-head"><h3>Capture</h3><span class="badge" id="catcher-count">Frame Catchers: 5</span></div>
+                <button class="action-btn primary" id="capture-btn">Throw Frame Catcher</button>
                 <p class="tiny" id="capture-tip">Weaken targets first for the best chance.</p>
               </div>
             </div>
@@ -1178,6 +1193,16 @@
     }
 
     const generatedMap = generateMap();
+    const mapLayout = [
+      ["acotw","acotw","acotw","elemental","elemental","elemental","rop","rop","rop","rop"],
+      ["acotw","acotw","elemental","elemental","elemental","elemental","rop","rop","rop","rop"],
+      ["acotw","acotw","elemental","elemental","flint","flint","rop","rop","rop","rop"],
+      ["acotw","elemental","elemental","flint","flint","flint","rop","rop","inbetween","inbetween"],
+      ["neydis","neydis","flint","flint","inbetween","inbetween","inbetween","inbetween","inbetween","inbetween"],
+      ["neydis","neydis","neydis","flint","inbetween","inbetween","inbetween","inbetween","inbetween","inbetween"],
+      ["neydis","neydis","neydis","neydis","inbetween","inbetween","inbetween","inbetween","inbetween","inbetween"],
+      ["neydis","neydis","neydis","neydis","inbetween","inbetween","inbetween","inbetween","inbetween","inbetween"]
+    ];
 
     const storyBeats = [
       {
@@ -1313,6 +1338,7 @@
 
     function currentRegion() {
       return getRegionById(generatedMap[state.position.y][state.position.x].regionId);
+      return getRegionById(mapLayout[state.position.y][state.position.x]);
     }
 
     function activeCreature() {
@@ -1414,6 +1440,10 @@
       const { kind, primary, secondary } = entity.sprite;
       if (kind === "lightning") {
         return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+    function spriteMarkup(entity) {
+      const { kind, primary, secondary } = entity.sprite;
+      if (kind === "lightning") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
           <rect width="100" height="100" rx="18" fill="url(#bg1)" />
           <defs><linearGradient id="bg1" x1="0" x2="1"><stop stop-color="#09121f"/><stop offset="1" stop-color="#143f70"/></linearGradient></defs>
           <circle cx="50" cy="50" r="28" fill="${secondary}" opacity="0.4"/>
@@ -1448,6 +1478,79 @@
         return `<svg class="entity-svg pixelated" viewBox="0 0 100 100" role="img" aria-label="${entity.name}"><rect width="100" height="100" rx="18" fill="#11161d" /><path d="M20 78 40 22h20l20 56Z" fill="${secondary}"/><path d="M36 58h28" stroke="${primary}" stroke-width="5"/><path d="M50 18v18" stroke="#ffffff" stroke-width="4"/></svg>`;
       }
       return `<svg class="entity-svg pixelated" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#1a2236"/><circle cx="50" cy="50" r="28" fill="${primary}"/></svg>`;
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#0a1d30" />
+          <path d="M50 16C38 31 26 46 26 60c0 15 10 24 24 24s24-9 24-24c0-14-12-29-24-44Z" fill="${primary}" stroke="#dff5ff" stroke-width="2"/>
+          <circle cx="42" cy="49" r="4" fill="#fff" opacity="0.7"/>
+        </svg>`;
+      }
+      if (kind === "slime") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#0e1d1c" />
+          <path d="M26 58c0-20 13-33 29-33s24 11 24 30c0 20-10 27-27 27S26 77 26 58Z" fill="${primary}" opacity="0.92"/>
+          <circle cx="44" cy="52" r="5" fill="#10291d"/>
+          <circle cx="60" cy="54" r="4" fill="#10291d"/>
+          <circle cx="58" cy="66" r="6" fill="${secondary}"/>
+        </svg>`;
+      }
+      if (kind === "sandman") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#17120e" />
+          <path d="M50 18c8 0 14 6 14 14v8c9 4 15 14 15 27v13H21V67c0-12 6-22 15-27v-8c0-8 6-14 14-14Z" fill="${primary}"/>
+          <ellipse cx="50" cy="34" rx="12" ry="14" fill="${secondary}"/>
+          <path d="M34 40h32" stroke="#2a1a12" stroke-width="4" opacity="0.4"/>
+        </svg>`;
+      }
+      if (kind === "walker") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#111321" />
+          <path d="M31 80c2-26 8-44 19-54 11 10 18 28 19 54" fill="${secondary}" opacity="0.72"/>
+          <circle cx="50" cy="28" r="10" fill="${primary}" />
+          <path d="M25 62 75 42" stroke="#ffffff" stroke-width="1.6" opacity="0.6" stroke-dasharray="5 4"/>
+          <path d="M28 46 78 68" stroke="#8f96ff" stroke-width="1.6" opacity="0.6" stroke-dasharray="4 5"/>
+        </svg>`;
+      }
+      if (kind === "reaper") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#10161a" />
+          <path d="M50 18c14 0 24 14 24 33 0 18-10 31-24 31S26 69 26 51c0-19 10-33 24-33Z" fill="${secondary}"/>
+          <path d="M24 78c12-7 40-9 54-1" stroke="${primary}" stroke-width="4" fill="none"/>
+          <path d="M69 18c8 0 11 10 3 15" stroke="#dff5ff" stroke-width="4" fill="none"/>
+        </svg>`;
+      }
+      if (kind === "watervoid") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#0d1125" />
+          <circle cx="50" cy="50" r="28" fill="${secondary}" opacity="0.75"/>
+          <path d="M34 54c8-16 24-16 32 0" stroke="${primary}" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M28 66c11-8 33-8 44 0" stroke="#eaf6ff" stroke-width="3" fill="none" opacity="0.75"/>
+        </svg>`;
+      }
+      if (kind === "gugle") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#0a1a0d" />
+          <path d="M20 58c0-18 15-28 33-28 16 0 28 8 28 23 0 22-18 29-35 29-12 0-26-8-26-24Z" fill="${primary}"/>
+          <circle cx="61" cy="50" r="5" fill="#001b05"/>
+          <path d="M17 63c16 7 28 11 50 9" stroke="${secondary}" stroke-width="5" fill="none" stroke-linecap="round"/>
+        </svg>`;
+      }
+      if (kind === "frame") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#21180a" />
+          <rect x="20" y="20" width="60" height="60" rx="8" fill="none" stroke="${primary}" stroke-width="4"/>
+          <rect x="30" y="30" width="40" height="40" rx="6" fill="${secondary}" opacity="0.7"/>
+          <path d="M28 49h44" stroke="#fff" stroke-width="3" stroke-dasharray="8 5"/>
+        </svg>`;
+      }
+      if (kind === "colossus") {
+        return `<svg class="entity-svg" viewBox="0 0 100 100" role="img" aria-label="${entity.name}">
+          <rect width="100" height="100" rx="18" fill="#11161d" />
+          <path d="M20 78 40 22h20l20 56Z" fill="${secondary}"/>
+          <path d="M36 58h28" stroke="${primary}" stroke-width="5"/>
+          <path d="M50 18v18" stroke="#ffffff" stroke-width="4"/>
+        </svg>`;
+      }
+      return `<svg class="entity-svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#1a2236"/><circle cx="50" cy="50" r="28" fill="${primary}"/></svg>`;
     }
 
     function renderMap() {
@@ -1464,6 +1567,13 @@
             else if (x < state.position.x) state.playerDirection = "left";
             else if (y > state.position.y) state.playerDirection = "down";
             else if (y < state.position.y) state.playerDirection = "up";
+      mapLayout.forEach((row, y) => {
+        row.forEach((regionId, x) => {
+          const region = getRegionById(regionId);
+          const tile = document.createElement("button");
+          tile.className = `tile ${region.terrain} ${region.mood} ${state.position.x === x && state.position.y === y ? "player" : ""}`;
+          tile.innerHTML = `<span class="tile-label">${region.short}</span>`;
+          tile.addEventListener("click", () => {
             state.position = { x, y };
             onMove();
           });
@@ -1537,6 +1647,7 @@
         </div>
       `).join("");
       el.catcherCount.textContent = `Shards: ${state.inventory.frameShards} • Catchers: ${state.inventory.catchers}`;
+      el.catcherCount.textContent = `Frame Catchers: ${state.inventory.catchers}`;
     }
 
     function renderQuests() {
@@ -1571,6 +1682,7 @@
       el.captureLayer = document.getElementById("capture-layer");
       el.captureLayer.classList.remove("active");
       el.enemySprite.classList.remove("animating", "shrink", "fade", "capture-fail");
+      el.enemySprite.innerHTML = spriteMarkup(enemy);
 
       el.playerCreatureName.textContent = player.name;
       el.playerCreatureRank.textContent = player.rank;
@@ -1611,6 +1723,8 @@
 
     function draw() {
         renderMap();
+    function renderAll() {
+      renderMap();
       renderStats();
       renderTeam();
       renderInventory();
@@ -1628,6 +1742,9 @@
       if (dx < 0) state.playerDirection = "left";
       if (dy > 0) state.playerDirection = "down";
       if (dy < 0) state.playerDirection = "up";
+    function movePlayer(dx, dy) {
+      const nx = Math.max(0, Math.min(mapLayout[0].length - 1, state.position.x + dx));
+      const ny = Math.max(0, Math.min(mapLayout.length - 1, state.position.y + dy));
       if (nx === state.position.x && ny === state.position.y) return;
       state.position = { x: nx, y: ny };
       onMove();
@@ -1651,6 +1768,8 @@
       pool.forEach(entity => {
         let repeats = entity.rarity.includes("S") ? 1 : entity.rarity.startsWith("A") ? 2 : 3;
         if (region.id === "inbetween" && voidPriority.has(entity.id)) repeats += 3;
+      pool.forEach(entity => {
+        const repeats = entity.rarity.includes("S") ? 1 : entity.rarity.startsWith("A") ? 2 : 3;
         for (let i = 0; i < repeats; i++) weighted.push(entity.id);
       });
       const chosenId = weighted[Math.floor(Math.random() * weighted.length)];
@@ -1841,6 +1960,20 @@
       } else {
         appendBattleLog(`${enemy.name} broke free.`);
         draw();
+    function tryCapture() {
+      if (!state.battle || state.inventory.catchers <= 0) return;
+      const enemy = state.battle.enemy;
+      state.inventory.catchers -= 1;
+      const hpFactor = 1 - enemy.currentHp / enemy.maxHp;
+      const chance = Math.min(0.92, enemy.captureRate + hpFactor * 0.55 + state.style / 300);
+      appendBattleLog(`You threw a Frame Catcher. Capture chance ${Math.round(chance * 100)}%.`);
+      renderInventory();
+      if (Math.random() < chance) {
+        appendBattleLog(`${enemy.name} was sealed inside the Frame Catcher!`);
+        completeBattle(true);
+      } else {
+        appendBattleLog(`${enemy.name} broke free.`);
+        renderAll();
         setTimeout(enemyTurn, 300);
       }
     }
